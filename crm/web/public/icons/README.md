@@ -1,3 +1,3 @@
 # Иконки направлений
 
-Четыре PNG-файла созданы из глифов шрифта Noto Emoji (Copyright 2013 Google LLC), распространяемого по SIL Open Font License 1.1. Цвета и размеры адаптированы под интерфейс CRM. Файлы используются как декоративные маркеры; смысловое название направления остаётся текстом рядом.
+Три PNG-файла взяты из набора [Twemoji](https://github.com/twitter/twemoji/tree/master/assets/72x72): `school.png` (U+1F3EB), `office.png` (U+1F3E2), `person.png` (U+1F9D1). Графика: Copyright 2019 Twitter, Inc and other contributors, лицензия [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Изображения не изменялись. Они служат декоративными маркерами; название направления остаётся текстом рядом.
