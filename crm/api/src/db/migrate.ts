@@ -35,6 +35,7 @@ const migrations = [
   { name: '0030_education_product_catalog.sql', path: fileURLToPath(new URL('../../migrations/0030_education_product_catalog.sql', import.meta.url)) },
   { name: '0031_vendor_sample_product.sql', path: fileURLToPath(new URL('../../migrations/0031_vendor_sample_product.sql', import.meta.url)) },
   { name: '0032_public_demo_intakes.sql', path: fileURLToPath(new URL('../../migrations/0032_public_demo_intakes.sql', import.meta.url)) },
+  { name: '0033_activity_assignment_notifications.sql', path: fileURLToPath(new URL('../../migrations/0033_activity_assignment_notifications.sql', import.meta.url)) },
 ];
 const client = await pool.connect();
 try {

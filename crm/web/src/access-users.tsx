@@ -22,7 +22,7 @@ type AccessUsersResponse = { users: AccessUser[] };
 type AccessChange = { enabled: boolean; reason: string };
 
 const roleLabels: Record<string, string> = { admin: 'Администратор', manager: 'Руководитель', kam: 'КАМ' };
-const kindLabels = { university: 'Вузы', corporate: 'Компании', individual: 'Физлица' } as const;
+const kindLabels = { university: 'Вузы и школы', corporate: 'Компании', individual: 'Физлица' } as const;
 const allKinds = Object.keys(kindLabels) as Array<keyof typeof kindLabels>;
 
 function messageOf(reason: unknown) {

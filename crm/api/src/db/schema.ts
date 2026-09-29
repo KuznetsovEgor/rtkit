@@ -242,7 +242,7 @@ export const taskSubscriptions = pgTable('task_subscriptions', {
 export const activityNotifications = pgTable('activity_notifications', {
   id: uuid('id').primaryKey(),
   activityId: uuid('activity_id').notNull().references(() => activities.id, { onDelete: 'cascade' }),
-  taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'cascade' }),
   eventId: uuid('event_id').notNull().references(() => activityEvents.id, { onDelete: 'cascade' }),
   recipientSub: text('recipient_sub').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

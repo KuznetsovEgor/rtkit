@@ -92,6 +92,25 @@ test('public demo form creates one CRM activity atomically and deduplicates retr
   assert.equal(created.rows[0].organization, input.organization);
   assert.equal(created.rows[0].person, input.name);
   assert.equal(created.rows[0].event_count, 1);
+  const assignedNotifications = await pool.query(`SELECT n.id,n.task_id,n.recipient_sub,e.event_type,e.actor_sub
+    FROM activity_notifications n JOIN activity_events e ON e.id=n.event_id WHERE n.activity_id=$1::uuid`, [activityId]);
+  assert.equal(assignedNotifications.rowCount, 1, 'one notification is created with the activity');
+  assert.equal(assignedNotifications.rows[0].recipient_sub, ownerSub);
+  assert.equal(assignedNotifications.rows[0].task_id, null, 'assignment needs no task subscription');
+  assert.equal(assignedNotifications.rows[0].event_type, 'public_intake_assigned');
+  assert.equal(assignedNotifications.rows[0].actor_sub, 'public-demo-intake', 'system assignment is not a KAM action');
+  const assignedApp = buildApp({ repository: new PostgresRepository(), authenticate: async () => ({ sub: ownerSub, name: 'Integration owner', roles: ['kam'] }) });
+  await assignedApp.ready();
+  context.after(async () => { await assignedApp.close(); });
+  const notificationPage = await assignedApp.inject({ method: 'GET', url: '/api/notifications' });
+  assert.equal(notificationPage.statusCode, 200, notificationPage.body);
+  assert.equal(notificationPage.json().unreadCount, 1);
+  assert.equal(notificationPage.json().items[0].activityId, activityId);
+  const ownerFeed = await assignedApp.inject({ method: 'GET', url: '/api/feed' });
+  assert.equal(ownerFeed.statusCode, 200, ownerFeed.body);
+  assert.deepEqual(ownerFeed.json().items, [], 'system event does not duplicate personal actions');
+  const readNotification = await assignedApp.inject({ method: 'POST', url: `/api/notifications/${assignedNotifications.rows[0].id}/read` });
+  assert.equal(readNotification.statusCode, 200, readNotification.body);
 
   const publicDetail = await app.inject({ method: 'GET', url: `/api/activities/${activityId}`, headers: { 'x-test-user': 'manager' } });
   assert.equal(publicDetail.statusCode, 200, publicDetail.body);
@@ -1958,8 +1977,8 @@ test('PostgreSQL persists independent activities, outcomes, tasks and validated 
   assert.equal(stageCount(pipeline, 'university', 'current', 'contact') - stageCount(priorPipeline, 'university', 'current', 'contact'), 1);
   const legacyPipeline = pipeline.find((lane) => lane.kind === 'individual' && lane.routeVersion === 'legacy');
   const v2Pipeline = pipeline.find((lane) => lane.kind === 'individual' && lane.routeVersion === 'v2');
-  assert.equal(legacyPipeline?.routeLabel, 'Заявки прежнего процесса');
-  assert.equal(v2Pipeline?.routeLabel, 'Заявки текущего процесса');
+  assert.equal(legacyPipeline?.routeLabel, 'Заявки до обновления маршрута');
+  assert.equal(v2Pipeline?.routeLabel, 'Заявки по новой схеме');
   assert.equal(stageCount(pipeline, 'individual', 'legacy', 'request') - stageCount(priorPipeline, 'individual', 'legacy', 'request'), 1);
   assert.equal(stageCount(pipeline, 'individual', 'v2', 'request') - stageCount(priorPipeline, 'individual', 'v2', 'request'), 1);
   const macroStageDrilldown = await app.inject({ method: 'GET', url: `/api/activities?segment=individual&stageKeys=request&routeVersion=v2&ownerSub=${fixtureOwnerSub}`, headers: { 'x-test-user': 'manager' } });
@@ -2993,6 +3012,17 @@ test('M05–M08 reassignment moves one activity and its open tasks while revokin
   assert.equal(confirmed.json().completedTasksPreserved, 1);
   const replayedConfirmation = await app.inject({ method: 'POST', url: `/api/manager/activities/${primary.id}/reassignment/confirm`, headers: { 'x-test-user': 'manager' }, payload: { previewToken: consumedPreview } });
   assert.equal(replayedConfirmation.statusCode, 409, 'A consumed preview token cannot be replayed.');
+  const reassignmentNotifications = await app.inject({ method: 'GET', url: '/api/notifications', headers: { 'x-test-user': 'b' } });
+  assert.equal(reassignmentNotifications.statusCode, 200, reassignmentNotifications.body);
+  assert.equal(reassignmentNotifications.json().unreadCount, 1);
+  assert.equal(reassignmentNotifications.json().items[0].eventType, 'owner_reassigned');
+  assert.equal(reassignmentNotifications.json().items[0].activityId, primary.id);
+  const reassignmentNotificationRows = await pool.query(`SELECT recipient_sub, count(*)::int AS count FROM activity_notifications
+    WHERE activity_id=$1 AND event_id=$2 GROUP BY recipient_sub`, [primary.id, confirmed.json().eventId]);
+  assert.deepEqual(reassignmentNotificationRows.rows, [{ recipient_sub: kamB.sub, count: 1 }], 'Only the new owner receives one notification after concurrent confirmations and replay.');
+  const oldOwnerNotifications = await app.inject({ method: 'GET', url: '/api/notifications', headers: { 'x-test-user': 'a' } });
+  assert.equal(oldOwnerNotifications.statusCode, 200, oldOwnerNotifications.body);
+  assert.ok(!oldOwnerNotifications.json().items.some((item: { eventType: string }) => item.eventType === 'owner_reassigned'));
 
   const oldRead = await app.inject({ method: 'GET', url: `/api/activities/${primary.id}`, headers: { 'x-test-user': 'a' } });
   assert.equal(oldRead.statusCode, 404, 'The former KAM loses card access immediately.');

@@ -308,7 +308,7 @@ export class PostgresRepository implements CrmRepository {
     const pipeline = new Map<string, ManagerOverview['pipeline'][number]>();
     for (const item of pipelineRows) {
       const routeVersion = item.kind === 'individual' ? item.routeVersion as 'legacy' | 'v2' : 'current';
-      const routeLabel = item.kind === 'individual' ? routeVersion === 'v2' ? 'Заявки текущего процесса' : 'Заявки прежнего процесса' : 'Текущий маршрут';
+      const routeLabel = item.kind === 'individual' ? routeVersion === 'v2' ? 'Заявки по новой схеме' : 'Заявки до обновления маршрута' : 'Текущий маршрут';
       let macro = { key: item.key, label: item.label };
       if (item.kind === 'individual') {
         if (item.key === 'request') macro = { key: 'request', label: 'Заявка' };
@@ -525,6 +525,10 @@ export class PostgresRepository implements CrmRepository {
           taskDatesAndHistoryPreserved: true,
         },
         actorSub: actor.sub, actorName: actor.name, createdAt: now,
+      });
+      await tx.insert(activityNotifications).values({
+        id: randomUUID(), activityId: String(activity.id), eventId,
+        recipientSub: String(target.sub), createdAt: now,
       });
       await tx.execute(sql`DELETE FROM activity_reassignment_previews WHERE id=${previewToken}`);
       return {

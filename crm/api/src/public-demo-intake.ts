@@ -63,8 +63,12 @@ export async function createPublicDemoInquiry(input: PublicDemoInquiry, idempote
     const title = `${titlePrefix} · ${input.note.slice(0, 110)}`;
     await client.query(`INSERT INTO activities(id,kind,title,origin,route_version,organization_id,person_id,stage_key,owner_sub,owner_name,priority)
       VALUES($1,$2,$3,'manual',$4,$5,$6,$7,$8,$9,3)`, [id, input.kind, title, input.kind === 'individual' ? 'v2' : 'legacy', organizationId, personId, stage.rows[0].stage_key, ownerSub, ownerName]);
+    const eventId = randomUUID();
     await client.query(`INSERT INTO activity_events(id,activity_id,event_type,summary,details,actor_sub,actor_name)
-      VALUES($1,$2,'created','Заявка с публичной формы',$3::jsonb,$4,$5)`, [randomUUID(), id, JSON.stringify({ source: 'Публичная форма РТК ИТ Школы', note: input.note, demoOnly: true }), ownerSub, ownerName]);
+      VALUES($1,$2,'public_intake_assigned','Новая заявка с сайта назначена вам',$3::jsonb,'public-demo-intake','Публичная форма')`,
+      [eventId, id, JSON.stringify({ source: 'Публичная форма РТК ИТ Школы', note: input.note, demoOnly: true })]);
+    await client.query(`INSERT INTO activity_notifications(id,activity_id,event_id,recipient_sub)
+      VALUES($1,$2,$3,$4)`, [randomUUID(), id, eventId, ownerSub]);
     await client.query('INSERT INTO public_demo_intakes(idempotency_key_hash,fingerprint_hash,activity_id) VALUES($1,$2,$3)', [idempotencyHash, fingerprintHash, id]);
     await client.query('COMMIT');
     return { duplicate: false };

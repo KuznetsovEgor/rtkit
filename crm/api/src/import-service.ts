@@ -254,7 +254,7 @@ async function checkVendorProductVisibility(values: MappedValues, existingVendor
   return errors;
 }
 
-function validateMapped(target: ImportTarget, values: MappedValues, keyError: string | undefined) {
+export function validateMappedImportRow(target: ImportTarget, values: MappedValues, keyError?: string) {
   const errors: string[] = [];
   const identityError = keyError ? keyError : null;
   if (identityError) errors.push(identityError);
@@ -263,8 +263,10 @@ function validateMapped(target: ImportTarget, values: MappedValues, keyError: st
     else if (values.name.trim().length > 180 || /[\u0000-\u001f\u007f]/.test(values.name)) errors.push('Название поставщика длиннее 180 символов или содержит недопустимые символы.');
     if ((values.productNames?.length ?? 0) > 2000) errors.push('Список продуктов слишком длинный.');
   } else {
-    if (!values.fullName?.trim()) errors.push(target === 'individual_applications' ? 'Не указано имя заявителя.' : 'Не указано имя контакта.');
+    const hasFullName = Boolean(values.fullName?.trim());
+    if (!hasFullName) errors.push(target === 'individual_applications' ? 'Не указано имя заявителя.' : 'Не указано имя контакта.');
     for (const field of ['fullName', 'email', 'phone', 'organizationName']) {
+      if (field === 'fullName' && !hasFullName) continue;
       const error = personImportError(field, values[field] ?? null);
       if (error) errors.push(error);
     }
@@ -446,7 +448,7 @@ export class PostgresImportService implements ImportService {
       const seenKeys = new Set<string>(); const seenUnkeyedPayloads = new Set<string>();
       const preview: PreviewRow[] = [];
       for (const row of rows) {
-        const errors = row.skipWarning ? [] : validateMapped(job.target, row.values, (row as any).keyError);
+        const errors = row.skipWarning ? [] : validateMappedImportRow(job.target, row.values, (row as any).keyError);
         if (!row.skipWarning && job.target === 'individual_applications') {
           const productError = await checkProduct(row.values);
           if (productError) errors.push(productError);

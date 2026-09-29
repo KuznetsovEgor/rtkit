@@ -6,6 +6,7 @@ import { AccessUsers } from './access-users';
 import { ActivityFeedPage, NotificationsPage, TaskUpdates } from './activity-updates';
 import { KamDashboard } from './kam-dashboard';
 import { ProgramCatalog, type LearningProgram } from './program-catalog';
+import { EducationProducts } from './education-products';
 import { formatRussianCount, russianNounForm } from './russian-count';
 import { UserAvatar } from './user-avatar';
 import './kam-onboarding.css';
@@ -200,7 +201,7 @@ type CorporatePlan = {
 type CorporatePlanInput = Omit<CorporatePlan, 'revision' | 'updatedAt' | 'updatedBy' | 'readOnly'> & { expectedRevision: number };
 
 const SEGMENTS: { key: Segment; label: string }[] = [
-  { key: 'all', label: 'Все сегменты' }, { key: 'university', label: 'Вузы' },
+  { key: 'all', label: 'Все сегменты' }, { key: 'university', label: 'Вузы и школы' },
   { key: 'company', label: 'Компании' }, { key: 'individual', label: 'Физлица' },
 ];
 const COLLECTIONS: { key: Collection; label: string }[] = [
@@ -208,13 +209,13 @@ const COLLECTIONS: { key: Collection; label: string }[] = [
   { key: 'awaiting_reply', label: 'Ожидаю ответа' }, { key: 'no_next_step', label: 'Без следующего шага' },
   { key: 'all', label: 'Все активности' },
 ];
-const KIND_LABEL: Record<Kind, string> = { university: 'Вуз', individual: 'Физлицо', corporate: 'Компания' };
+const KIND_LABEL: Record<Kind, string> = { university: 'Вуз / школа', individual: 'Физлицо', corporate: 'Компания' };
 const INDIVIDUAL_ROUTE_STAGES = {
   v2: ['request', 'consultation', 'conditions', 'lms_handoff', 'exceptions', 'result'],
   legacy: ['request', 'consultation', 'enrollment', 'learning', 'closed'],
 } as const;
 const PROCESS_LABEL: Record<Kind, string> = {
-  university: 'Партнёрства с вузами', individual: 'Индивидуальное обучение', corporate: 'Корпоративное обучение',
+  university: 'Партнёрства с вузами и школами', individual: 'Индивидуальное обучение', corporate: 'Корпоративное обучение',
 };
 const OUTCOMES = [
   ['connected', 'Связались'], ['no_answer', 'Не ответил'], ['meeting_booked', 'Договорились о встрече'],
@@ -322,7 +323,9 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
   const onboardingCloseRef = useRef<HTMLButtonElement>(null);
   const onboardingTriggerRef = useRef<HTMLButtonElement>(null);
   const roleScopeRef = useRef(roleScope);
-  const [activeView, setActiveView] = useState<'queue' | 'activities' | 'manager' | 'dashboard' | 'reports' | 'import' | 'exchange' | 'cms-intake' | 'workflow' | 'users' | 'handbook' | 'feed' | 'notifications'>(() => hasManagerAccess ? 'manager' : isTechnicalAdminOnly ? 'exchange' : 'queue');
+  const [activeView, setActiveView] = useState<'queue' | 'activities' | 'manager' | 'team' | 'dashboard' | 'reports' | 'import' | 'exchange' | 'cms-intake' | 'workflow' | 'users' | 'handbook' | 'products' | 'feed' | 'notifications'>(() => hasManagerAccess ? 'manager' : isTechnicalAdminOnly ? 'exchange' : 'queue');
+  const [teamOwner, setTeamOwner] = useState('');
+  const [learningNavOpen, setLearningNavOpen] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(savedSidebarCollapsed);
   const [theme, setTheme] = useState<'light' | 'dark'>(savedTheme);
@@ -334,6 +337,7 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
   const queueFilters = useRef({ segment, collection, search: queueSearch, drilldown });
   const [list, setList] = useState<Activity[]>([]);
   const [listTotal, setListTotal] = useState(0);
+  const [collectionCounts, setCollectionCounts] = useState<Record<Collection, number> | null>(null);
   const [listLoading, setListLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const queueRequestVersion = useRef(0);
@@ -660,6 +664,7 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
     if (!hasQueueAccess) {
       queueRequestVersion.current += 1;
       setList([]); setListTotal(0); setListLoading(false); setLoadingMore(false);
+      setCollectionCounts(null);
       return;
     }
     const scope = roleScope;
@@ -672,6 +677,24 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
     const requestVersion = ++queueRequestVersion.current;
     refreshList(0, false, requestVersion).catch((reason: Error) => { if (isCurrentRoleScope(scope)) setError(reason.message); });
   }, [segment, collection, drilldown, queueSearch, hasQueueAccess, roleScope, activeView]);
+  useEffect(() => {
+    if (!hasQueueAccess || (activeView !== 'queue' && activeView !== 'activities')) return;
+    let live = true;
+    setCollectionCounts(null);
+    Promise.all(COLLECTIONS.map(async ({ key }) => {
+      const query = new URLSearchParams({ segment, collection: key, offset: '0', limit: '1' });
+      if (queueSearch) query.set('q', queueSearch);
+      if (drilldown?.ownerSub) query.set('ownerSub', drilldown.ownerSub);
+      if (drilldown?.productId) query.set('productId', drilldown.productId);
+      if (drilldown?.stageKeys?.length) query.set('stageKeys', drilldown.stageKeys.join(','));
+      if (drilldown?.routeVersion) query.set('routeVersion', drilldown.routeVersion);
+      const page = await api<ActivityPage>(`/api/activities?${query}`);
+      return [key, page.total] as const;
+    })).then((entries) => {
+      if (live && isCurrentRoleScope(roleScope)) setCollectionCounts(Object.fromEntries(entries) as Record<Collection, number>);
+    }).catch(() => { if (live) setCollectionCounts(null); });
+    return () => { live = false; };
+  }, [api, hasQueueAccess, roleScope, activeView, segment, collection, queueSearch, drilldown, listTotal]);
   useEffect(() => {
     if (!hasQueueAccess) { setCatalog({ organizations: [], products: [], workflows: [] }); setContacts([]); return; }
     const scope = roleScope;
@@ -691,7 +714,7 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
   }, [api, roles.join(','), roleScope]);
   useEffect(() => {
     const scope = roleScope;
-    if (hasManagerAccess && activeView === 'manager') {
+    if (hasManagerAccess && (activeView === 'manager' || activeView === 'team')) {
       refreshManagerOverview().catch((reason: Error) => { if (isCurrentRoleScope(scope)) setError(reason.message); });
     }
   }, [api, activeView, hasManagerAccess, overviewReloadKey, roleScope]);
@@ -961,13 +984,14 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
   function navigateToMobileView(view: Exclude<typeof activeView, 'queue'>) {
     if ((view === 'cms-intake' && !hasKamAccess)
       || (view === 'dashboard' && !hasKamAccess)
-      || ((view === 'feed' || view === 'notifications') && !hasQueueAccess)
-      || ((view === 'manager' || view === 'reports' || view === 'import') && !hasManagerAccess)
+      || (view === 'feed' && !(hasKamAccess && !hasManagerAccess))
+      || (view === 'notifications' && !hasQueueAccess)
+      || ((view === 'manager' || view === 'team' || view === 'reports' || view === 'import') && !hasManagerAccess)
       || ((view === 'exchange' || view === 'workflow' || view === 'users') && !hasAdminAccess)
-      || (view === 'handbook' && !(hasQueueAccess || hasAdminAccess))) return false;
+      || ((view === 'handbook' || view === 'products') && !(hasQueueAccess || hasAdminAccess))) return false;
     if (!leaveDetail()) return false;
     setActiveView(view);
-    if (view === 'manager') setOverviewReloadKey((key) => key + 1);
+    if (view === 'manager' || view === 'team') setOverviewReloadKey((key) => key + 1);
     if (view === 'exchange') setExchangeReloadKey((key) => key + 1);
     setError('');
     return true;
@@ -1008,14 +1032,17 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
   }, [mobileMoreOpen]);
 
   const mobileNavigationDestinations = [
-    ...(hasManagerAccess ? [{ id: 'manager', label: 'Показатели команды', icon: 'portfolio' as const, select: () => navigateToMobileView('manager') }] : []),
+    ...(hasManagerAccess ? [{ id: 'manager', label: 'Показатели команды', icon: 'portfolio' as const, select: () => navigateToMobileView('manager') }, { id: 'team', label: 'Команда', icon: 'users' as const, select: () => navigateToMobileView('team') }] : []),
     ...(hasQueueAccess ? [{ id: 'queue', label: 'Рабочая очередь', icon: 'queue' as const, select: goToSavedQueue }] : []),
     ...(hasQueueAccess ? [{ id: 'activities', label: 'Все активности', icon: 'activities' as const, select: goToAllActivities }] : []),
     ...(hasKamAccess && !hasManagerAccess ? [{ id: 'dashboard', label: 'Показатели', icon: 'portfolio' as const, select: () => navigateToMobileView('dashboard') }] : []),
-    ...(hasQueueAccess ? [{ id: 'feed', label: hasManagerAccess ? 'Движение команды' : 'Мои действия', icon: 'feed' as const, select: () => navigateToMobileView('feed') }] : []),
+    ...(hasKamAccess && !hasManagerAccess ? [{ id: 'feed', label: 'Мои действия', icon: 'feed' as const, select: () => navigateToMobileView('feed') }] : []),
     ...(hasQueueAccess ? [{ id: 'notifications', label: 'Уведомления', icon: 'notifications' as const, select: () => navigateToMobileView('notifications') }] : []),
-    ...(hasKamAccess ? [{ id: 'cms-intake', label: 'Входящие с сайта', icon: 'intake' as const, select: () => navigateToMobileView('cms-intake') }] : []),
-    ...((hasQueueAccess || hasAdminAccess) ? [{ id: 'handbook', label: 'Справочник этапов', icon: 'handbook' as const, select: () => navigateToMobileView('handbook') }] : []),
+    ...(hasKamAccess ? [{ id: 'cms-intake', label: 'Без ответственного', icon: 'intake' as const, select: () => navigateToMobileView('cms-intake') }] : []),
+    ...((hasQueueAccess || hasAdminAccess) ? [
+      { id: 'handbook', label: 'Справочник этапов', icon: 'handbook' as const, select: () => navigateToMobileView('handbook') },
+      { id: 'products', label: 'Продукты', icon: 'handbook' as const, select: () => navigateToMobileView('products') },
+    ] : []),
     ...(hasManagerAccess ? [
       { id: 'reports', label: 'Отчёты', icon: 'reports' as const, select: () => navigateToMobileView('reports') },
       { id: 'import', label: 'Каталоги и импорт', icon: 'import' as const, select: () => navigateToMobileView('import') },
@@ -1077,12 +1104,21 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
       <div className="sidebar-caption">РАБОЧЕЕ ПРОСТРАНСТВО</div>
       <div id="desktop-navigation" className="desktop-nav">
       {hasManagerAccess && <button className={`nav-item ${!selected && activeView === 'manager' ? 'active' : ''}`} aria-label="Показатели команды" title="Показатели команды" aria-current={!selected && activeView === 'manager' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('manager'); setOverviewReloadKey((key) => key + 1); setError(''); }}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="portfolio" /></span><span className="nav-label-wide">Показатели команды</span><span className="nav-label-mobile" aria-hidden="true">Портфель</span></button>}
-      {hasQueueAccess && <button className={`nav-item ${!selected && activeView === 'queue' ? 'active' : ''}`} aria-label="Рабочая очередь" title="Рабочая очередь" aria-current={!selected && activeView === 'queue' ? 'page' : undefined} onClick={goToSavedQueue}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="queue" /></span><span className="nav-label-wide">Рабочая очередь</span><span className="nav-label-mobile" aria-hidden="true">Очередь</span>{activeView === 'queue' && <span className="nav-count">{listTotal}</span>}</button>}
+      {hasManagerAccess && <button className={`nav-item ${!selected && activeView === 'team' ? 'active' : ''}`} aria-label="Команда" title="Команда" aria-current={!selected && activeView === 'team' ? 'page' : undefined} onClick={() => navigateToMobileView('team')}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="users" /></span><span className="nav-label-wide">Команда</span><span className="nav-label-mobile" aria-hidden="true">Команда</span></button>}
+      {hasQueueAccess && <button className={`nav-item nav-item-queue ${!selected && activeView === 'queue' ? 'active' : ''}`} aria-label="Рабочая очередь" title="Рабочая очередь" aria-current={!selected && activeView === 'queue' ? 'page' : undefined} onClick={goToSavedQueue}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="queue" /></span><span className="nav-label-wide">Рабочая очередь</span><span className="nav-label-mobile" aria-hidden="true">Очередь</span>{activeView === 'queue' && <span className="nav-count">{listTotal}</span>}</button>}
       {hasKamAccess && !hasManagerAccess && <button className={`nav-item ${!selected && activeView === 'dashboard' ? 'active' : ''}`} aria-label="Показатели" title="Показатели" aria-current={!selected && activeView === 'dashboard' ? 'page' : undefined} onClick={() => navigateToMobileView('dashboard')}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="portfolio" /></span><span className="nav-label-wide">Показатели</span></button>}
-      {hasQueueAccess && <button className={`nav-item ${!selected && activeView === 'feed' ? 'active' : ''}`} aria-label={hasManagerAccess ? 'Движение команды' : 'Мои действия'} title={hasManagerAccess ? 'Движение команды' : 'Мои действия'} aria-current={!selected && activeView === 'feed' ? 'page' : undefined} onClick={() => navigateToMobileView('feed')}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="feed" /></span><span className="nav-label-wide">{hasManagerAccess ? 'Движение команды' : 'Мои действия'}</span></button>}
+      {hasKamAccess && !hasManagerAccess && <button className={`nav-item ${!selected && activeView === 'feed' ? 'active' : ''}`} aria-label="Мои действия" title="Мои действия" aria-current={!selected && activeView === 'feed' ? 'page' : undefined} onClick={() => navigateToMobileView('feed')}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="feed" /></span><span className="nav-label-wide">Мои действия</span></button>}
       {hasQueueAccess && <button className={`nav-item ${!selected && activeView === 'notifications' ? 'active' : ''}`} aria-label={`Уведомления${unreadNotifications ? `, непрочитанных: ${unreadNotifications}` : ''}`} title="Уведомления" aria-current={!selected && activeView === 'notifications' ? 'page' : undefined} onClick={() => navigateToMobileView('notifications')}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="notifications" /></span><span className="nav-label-wide">Уведомления</span>{unreadNotifications > 0 && <span className="nav-count">{unreadNotifications}</span>}</button>}
-      {hasKamAccess && <button className={`nav-item ${!selected && activeView === 'cms-intake' ? 'active' : ''}`} aria-label="Входящие с сайта" title="Входящие с сайта" aria-current={!selected && activeView === 'cms-intake' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('cms-intake'); setError(''); }}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="intake" /></span><span className="nav-label-wide">Входящие с сайта</span><span className="nav-label-mobile" aria-hidden="true">Входящие</span></button>}
-      {(hasQueueAccess || hasAdminAccess) && <button className={`nav-item ${!selected && activeView === 'handbook' ? 'active' : ''}`} aria-label="Справочник этапов" title="Справочник этапов" aria-current={!selected && activeView === 'handbook' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('handbook'); setError(''); }}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="handbook" /></span><span className="nav-label-wide">Справочник этапов</span><span className="nav-label-mobile" aria-hidden="true">Справка</span></button>}
+      {hasKamAccess && <button className={`nav-item ${!selected && activeView === 'cms-intake' ? 'active' : ''}`} aria-label="Входящие без ответственного" title="Входящие без ответственного" aria-current={!selected && activeView === 'cms-intake' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('cms-intake'); setError(''); }}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="intake" /></span><span className="nav-label-wide">Без ответственного</span><span className="nav-label-mobile" aria-hidden="true">Входящие</span></button>}
+      {(hasQueueAccess || hasAdminAccess) && <div className={`nav-group${!selected && ['handbook', 'products'].includes(activeView) ? ' active' : ''}`}>
+        <button type="button" className={`nav-item nav-group-trigger ${!selected && ['handbook', 'products'].includes(activeView) ? 'active' : ''}`} aria-label="Обучение" title="Обучение" aria-expanded={learningNavOpen} aria-controls="learning-subnav" onClick={() => setLearningNavOpen((open) => !open)}>
+          <span className="nav-icon" aria-hidden="true"><NavigationIcon name="handbook" /></span><span className="nav-label-wide">Обучение</span><span className="nav-label-mobile" aria-hidden="true">Обучение</span><span className="nav-group-chevron" aria-hidden="true">{learningNavOpen ? '⌄' : '›'}</span>
+        </button>
+        {learningNavOpen && <div id="learning-subnav" className="nav-subnav">
+          <button type="button" className={`nav-subitem ${!selected && activeView === 'handbook' ? 'active' : ''}`} aria-current={!selected && activeView === 'handbook' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('handbook'); setError(''); }}><span>Справочник этапов</span></button>
+          <button type="button" className={`nav-subitem ${!selected && activeView === 'products' ? 'active' : ''}`} aria-current={!selected && activeView === 'products' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('products'); setError(''); }}><span>Продукты</span></button>
+        </div>}
+      </div>}
       {hasManagerAccess && <button className={`nav-item ${!selected && activeView === 'reports' ? 'active' : ''}`} aria-label="Отчёты" title="Отчёты" aria-current={!selected && activeView === 'reports' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('reports'); setError(''); }}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="reports" /></span><span className="nav-label-wide">Отчёты</span><span className="nav-label-mobile" aria-hidden="true">Отчёты</span></button>}
       {hasAdminAccess && <button className={`nav-item ${!selected && activeView === 'exchange' ? 'active' : ''}`} aria-label="Состояние системы" title="Состояние системы" aria-current={!selected && activeView === 'exchange' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('exchange'); setExchangeReloadKey((key) => key + 1); setError(''); }}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="exchange" /></span><span className="nav-label-wide">Состояние системы</span><span className="nav-label-mobile" aria-hidden="true">Система</span></button>}
       {hasAdminAccess && <button className={`nav-item ${!selected && activeView === 'workflow' ? 'active' : ''}`} aria-label="Схема вузов" title="Схема вузов" aria-current={!selected && activeView === 'workflow' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('workflow'); setError(''); }}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="workflow" /></span><span className="nav-label-wide">Схема вузов</span><span className="nav-label-mobile" aria-hidden="true">Схема</span></button>}
@@ -1140,7 +1176,7 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
 
     <main className="main-area">
       <header className="topbar">
-        <div className="crumbs"><span>Рабочее пространство</span><i>/</i><b>{selected ? 'Активность' : activeView === 'activities' ? 'Все активности' : activeView === 'manager' ? 'Показатели команды' : activeView === 'dashboard' ? 'Показатели' : activeView === 'feed' ? hasManagerAccess ? 'Движение команды' : 'Мои действия' : activeView === 'notifications' ? 'Уведомления' : activeView === 'reports' ? 'Отчёты' : activeView === 'import' ? 'Импорт и каталоги' : activeView === 'exchange' ? 'Состояние системы' : activeView === 'workflow' ? 'Схема вузов' : activeView === 'users' ? 'Пользователи' : activeView === 'cms-intake' ? 'Входящие с сайта' : activeView === 'handbook' ? 'Справочник этапов' : 'Рабочая очередь'}</b></div>
+        <div className="crumbs"><span>Рабочее пространство</span><i>/</i><b>{selected ? 'Активность' : activeView === 'activities' ? 'Все активности' : activeView === 'manager' ? 'Показатели команды' : activeView === 'team' ? 'Команда' : activeView === 'dashboard' ? 'Показатели' : activeView === 'feed' ? 'Мои действия' : activeView === 'notifications' ? 'Уведомления' : activeView === 'reports' ? 'Отчёты' : activeView === 'import' ? 'Импорт и каталоги' : activeView === 'exchange' ? 'Состояние системы' : activeView === 'workflow' ? 'Схема вузов' : activeView === 'users' ? 'Пользователи' : activeView === 'cms-intake' ? 'Без ответственного' : activeView === 'handbook' ? 'Справочник этапов' : activeView === 'products' ? 'Продукты' : 'Рабочая очередь'}</b></div>
         <div className="topbar-right">
           {hasKamAccess && <button ref={onboardingTriggerRef} type="button" className="kam-onboarding-trigger" onClick={openOnboarding} aria-haspopup="dialog">Как работать</button>}
           {hasQueueAccess && <button type="button" className={`topbar-notifications${!selected && activeView === 'notifications' ? ' active' : ''}`} aria-label={`Уведомления${unreadNotifications ? `, непрочитанных: ${unreadNotifications}` : ''}`} aria-current={!selected && activeView === 'notifications' ? 'page' : undefined} title="Уведомления" onClick={() => navigateToMobileView('notifications')}><span className="topbar-notifications-icon"><NavigationIcon name="notifications" /></span>{unreadNotifications > 0 && <span className="topbar-notifications-count">{unreadNotifications}</span>}</button>}
@@ -1168,7 +1204,7 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
           <div><div className="eyebrow">ДОСТУП К CRM</div><h1 id="workspace-access-title">Рабочее пространство недоступно</h1>
             <p>{roles.length === 0 ? 'Для вашей учётной записи не назначена роль CRM. Обратитесь к администратору, чтобы получить доступ.' : 'В этой учётной записи нет роли для работы в CRM. Обратитесь к администратору, чтобы проверить доступ.'}</p>
           </div>
-        </section> : !selected && activeView === 'handbook' && (hasQueueAccess || hasAdminAccess) ? <GuidanceHandbook api={api} canEditDrafts={hasManagerAccess} canPublish={hasAdminAccess} /> : !selected && activeView === 'users' && hasAdminAccess ? <AccessUsers api={api} currentUserSub={user.sub} /> : !selected && activeView === 'workflow' && hasAdminAccess ? <UniversityWorkflowAdmin api={api} onApplied={() => {
+        </section> : !selected && activeView === 'handbook' && (hasQueueAccess || hasAdminAccess) ? <GuidanceHandbook api={api} canEditDrafts={hasManagerAccess} canPublish={hasAdminAccess} /> : !selected && activeView === 'products' && (hasQueueAccess || hasAdminAccess) ? <EducationProducts /> : !selected && activeView === 'users' && hasAdminAccess ? <AccessUsers api={api} currentUserSub={user.sub} /> : !selected && activeView === 'workflow' && hasAdminAccess ? <UniversityWorkflowAdmin api={api} onApplied={() => {
           const scope = roleScope;
           if (!isCurrentRoleScope(scope)) return;
           if (hasQueueAccess) {
@@ -1176,14 +1212,14 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
             void refreshLoadedQueue();
           }
           if (hasManagerAccess) { setManagerOverview(null); setOverviewReloadKey((key) => key + 1); }
-        }} /> : !selected && activeView === 'dashboard' && hasKamAccess && !hasManagerAccess ? <KamDashboard api={api} onQueue={(nextSegment, nextCollection, nextRouteVersion) => goToQueue(nextSegment, nextCollection, nextRouteVersion ? { routeVersion: nextRouteVersion, stageLabel: nextRouteVersion === 'legacy' ? 'Прежний процесс физлиц' : 'Текущий процесс физлиц' } : null, '')} /> : !selected && activeView === 'feed' && hasQueueAccess ? <ActivityFeedPage api={api} manager={hasManagerAccess} kams={managerKams} onOpenActivity={(id) => { void run(async () => { await refreshDetail(id, beginDetailNavigation()); }); }} /> : !selected && activeView === 'notifications' && hasQueueAccess ? <NotificationsPage api={api} onRead={setUnreadNotifications} onOpenActivity={(id) => { void run(async () => { await refreshDetail(id, beginDetailNavigation()); }); }} /> : !selected && activeView === 'reports' && hasManagerAccess ? <ReportsPage api={api} token={token} hasManagerAccess={hasManagerAccess} onOpenActivity={openReportActivity} /> : !selected && activeView === 'import' && hasManagerAccess ? <ImportPanel api={api} scope={importScope} onCompleted={() => { refreshAfterImport().catch((reason: Error) => setError(reason.message)); }} /> : !selected && activeView === 'exchange' && hasAdminAccess ? <ExchangeMonitorPage monitor={exchangeMonitor} imports={adminImportSummary} loading={exchangeLoading} busy={busy} onRefresh={() => setExchangeReloadKey((key) => key + 1)} onOpenUsers={() => { if (!leaveDetail()) return; setActiveView('users'); setError(''); }} onCmsPull={() => runAdminExchange(() => api('/api/admin/exchanges/cms/pull', { method: 'POST' }), 'Обмен с CMS выполнен. Проверьте отдельное подтверждение CRM → CMS.')} onLmsPull={() => runAdminExchange(() => api('/api/admin/exchanges/lms/pull', { method: 'POST' }), 'События LMS обработаны; учебное представление содержит только полученные факты.')} onFailure={(system, mode) => runAdminExchange(() => api(`/api/admin/exchanges/mocks/${system}/fail-next`, { method: 'POST', body: JSON.stringify({ mode }) }), mode === 'http_error' ? `Следующий запрос в тестовой среде ${system.toUpperCase()} завершится технической ошибкой.` : `Следующая команда тестовой среды ${system.toUpperCase()} будет отклонена.`)} onRetry={(id) => runAdminExchange(() => api(`/api/exchanges/${id}/retry`, { method: 'POST' }), 'Повтор отправлен; проверьте ответ источника.')} onOutcome={(id, outcome, factKind) => runAdminExchange(async () => { await api(`/api/admin/exchanges/lms/${id}/outcome`, { method: 'POST', body: JSON.stringify({ outcome, factKind }) }); if (outcome === 'perform') await api('/api/admin/exchanges/lms/pull', { method: 'POST' }); }, outcome === 'perform' ? 'Событие получено из LMS и добавлено в представление только для просмотра.' : 'Тестовая среда LMS отклонила запрос.')} onOpenActivity={hasQueueAccess ? openExchangeActivity : undefined} /> : !selected && activeView === 'cms-intake' && hasKamAccess ? <CmsIntakePage items={cmsIntake} loading={cmsIntakeLoading} busy={busy} onRefresh={() => refreshCmsIntake().catch((reason: Error) => setError(reason.message))} onClaim={(id) => { const scope = roleScope; if (!isCurrentRoleScope(scope)) return; const routeVersion = beginDetailNavigation(); return run(async () => { await api(`/api/cms-mock/intake/${id}/claim`, { method: 'POST' }); if (!isCurrentRoleScope(scope)) return; await refreshCmsIntake(); await refreshLoadedQueue(); await refreshDetail(id, routeVersion); if (!isCurrentRoleScope(scope)) return; setActiveView('queue'); }, 'Обращение назначено вам'); }} /> : !selected && activeView === 'manager' && hasManagerAccess ? <ManagerPortfolio overview={managerOverview} loading={managerLoading} onRefresh={() => setOverviewReloadKey((key) => key + 1)} onQueue={(nextSegment, nextCollection, nextDrilldown) => goToQueue(nextSegment, nextCollection, nextDrilldown, '')} /> : !selected && hasQueueAccess ? <>
+        }} /> : !selected && activeView === 'dashboard' && hasKamAccess && !hasManagerAccess ? <KamDashboard api={api} onQueue={(nextSegment, nextCollection, nextRouteVersion) => goToQueue(nextSegment, nextCollection, nextRouteVersion ? { routeVersion: nextRouteVersion, stageLabel: nextRouteVersion === 'legacy' ? 'Заявки до обновления маршрута' : 'Заявки по новой схеме' } : null, '')} /> : !selected && activeView === 'feed' && hasKamAccess && !hasManagerAccess ? <ActivityFeedPage api={api} manager={hasManagerAccess} kams={managerKams} onOpenActivity={(id) => { void run(async () => { await refreshDetail(id, beginDetailNavigation()); }); }} /> : !selected && activeView === 'notifications' && hasQueueAccess ? <NotificationsPage api={api} onRead={setUnreadNotifications} onOpenActivity={(id) => { void run(async () => { await refreshDetail(id, beginDetailNavigation()); }); }} /> : !selected && activeView === 'reports' && hasManagerAccess ? <ReportsPage api={api} token={token} hasManagerAccess={hasManagerAccess} onOpenActivity={openReportActivity} /> : !selected && activeView === 'import' && hasManagerAccess ? <ImportPanel api={api} scope={importScope} onCompleted={() => { refreshAfterImport().catch((reason: Error) => setError(reason.message)); }} /> : !selected && activeView === 'exchange' && hasAdminAccess ? <ExchangeMonitorPage monitor={exchangeMonitor} imports={adminImportSummary} loading={exchangeLoading} busy={busy} onRefresh={() => setExchangeReloadKey((key) => key + 1)} onOpenUsers={() => { if (!leaveDetail()) return; setActiveView('users'); setError(''); }} onCmsPull={() => runAdminExchange(() => api('/api/admin/exchanges/cms/pull', { method: 'POST' }), 'Обмен с CMS выполнен. Проверьте отдельное подтверждение CRM → CMS.')} onLmsPull={() => runAdminExchange(() => api('/api/admin/exchanges/lms/pull', { method: 'POST' }), 'События LMS обработаны; учебное представление содержит только полученные факты.')} onFailure={(system, mode) => runAdminExchange(() => api(`/api/admin/exchanges/mocks/${system}/fail-next`, { method: 'POST', body: JSON.stringify({ mode }) }), mode === 'http_error' ? `Следующий запрос в тестовой среде ${system.toUpperCase()} завершится технической ошибкой.` : `Следующая команда тестовой среды ${system.toUpperCase()} будет отклонена.`)} onRetry={(id) => runAdminExchange(() => api(`/api/exchanges/${id}/retry`, { method: 'POST' }), 'Повтор отправлен; проверьте ответ источника.')} onOutcome={(id, outcome, factKind) => runAdminExchange(async () => { await api(`/api/admin/exchanges/lms/${id}/outcome`, { method: 'POST', body: JSON.stringify({ outcome, factKind }) }); if (outcome === 'perform') await api('/api/admin/exchanges/lms/pull', { method: 'POST' }); }, outcome === 'perform' ? 'Событие получено из LMS и добавлено в представление только для просмотра.' : 'Тестовая среда LMS отклонила запрос.')} onOpenActivity={hasQueueAccess ? openExchangeActivity : undefined} /> : !selected && activeView === 'cms-intake' && hasKamAccess ? <CmsIntakePage items={cmsIntake} loading={cmsIntakeLoading} busy={busy} onRefresh={() => refreshCmsIntake().catch((reason: Error) => setError(reason.message))} onClaim={(id) => { const scope = roleScope; if (!isCurrentRoleScope(scope)) return; const routeVersion = beginDetailNavigation(); return run(async () => { await api(`/api/cms-mock/intake/${id}/claim`, { method: 'POST' }); if (!isCurrentRoleScope(scope)) return; await refreshCmsIntake(); await refreshLoadedQueue(); await refreshDetail(id, routeVersion); if (!isCurrentRoleScope(scope)) return; setActiveView('queue'); }, 'Обращение назначено вам'); }} /> : !selected && activeView === 'manager' && hasManagerAccess ? <ManagerPortfolio overview={managerOverview} loading={managerLoading} onRefresh={() => setOverviewReloadKey((key) => key + 1)} onQueue={(nextSegment, nextCollection, nextDrilldown) => goToQueue(nextSegment, nextCollection, nextDrilldown, '')} onOpenOwner={(sub) => { setTeamOwner(sub); setActiveView('team'); setError(''); }} /> : !selected && activeView === 'team' && hasManagerAccess ? <TeamPage overview={managerOverview} kams={managerKams} owner={teamOwner} onOwnerChange={setTeamOwner} loading={managerLoading} onRefresh={() => setOverviewReloadKey((key) => key + 1)} api={api} onOpenActivity={(id) => { void run(async () => { await refreshDetail(id, beginDetailNavigation()); }); }} onQueue={(sub, name, nextCollection) => goToQueue('all', nextCollection, { ownerSub: sub, ownerName: name }, '')} /> : !selected && hasQueueAccess ? <>
           <div className="page-heading queue-heading">
             <div><div className="eyebrow">{activeView === 'activities' ? 'ОБЩИЙ СПИСОК · ВСЕ СЕГМЕНТЫ' : `ПОРТФЕЛЬ · ${hasManagerAccess ? 'ВСЯ КОМАНДА' : 'МОИ АКТИВНОСТИ'}`}</div><h1 id={activeView === 'activities' ? 'activities-heading' : 'queue-heading'} tabIndex={-1}>{activeView === 'activities' ? 'Все активности' : 'Рабочая очередь'}</h1><p>{activeView === 'activities' ? 'Общий список активностей по вузам, компаниям и физлицам' : 'Следующие действия по клиентам и учебным программам'}</p></div>
             <button className="primary" onClick={() => setShowCreate(true)}><span>＋</span> Новая активность</button>
           </div>
           <section className="filters" aria-label={activeView === 'activities' ? 'Фильтры всех активностей' : 'Фильтры очереди'}>
             <div className="filter-block"><span className="filter-label">Сегмент</span><div className="segmented">{SEGMENTS.map((item) => <button key={item.key} type="button" aria-pressed={segment === item.key} className={segment === item.key ? 'selected' : ''} onClick={() => { if (item.key !== segment && (drilldown?.stageKeys || drilldown?.routeVersion)) setDrilldown(null); setSegment(item.key); }}>{item.label}</button>)}</div></div>
-            <div className="filter-block collection-block"><span className="filter-label">{activeView === 'activities' ? 'Подборка' : 'Рабочая подборка'}</span><div className="collection-pills">{COLLECTIONS.map((item) => <button key={item.key} type="button" aria-pressed={collection === item.key} className={collection === item.key ? 'selected' : ''} onClick={() => setCollection(item.key)}>{item.label}</button>)}</div></div>
+            <div className="filter-block collection-block"><span className="filter-label">{activeView === 'activities' ? 'Подборка' : 'Рабочая подборка'}</span><div className="collection-pills">{COLLECTIONS.map((item) => <button key={item.key} type="button" aria-pressed={collection === item.key} className={collection === item.key ? 'selected' : ''} onClick={() => setCollection(item.key)}><span>{item.label}</span>{collectionCounts && <span className="collection-count">{collectionCounts[item.key]}</span>}</button>)}</div></div>
             <div className="filter-block queue-search-block"><label className="filter-label" htmlFor="queue-search">Поиск</label><div className="queue-search-control"><input id="queue-search" type="text" value={searchInput} maxLength={120} placeholder="Название, организация или контакт" onChange={(event) => setSearchInput(event.target.value)} /><button type="button" aria-label="Сбросить поиск" title="Сбросить поиск" disabled={!searchInput} onClick={() => { setSearchInput(''); setQueueSearch(''); }}>×</button></div></div>
           </section>
           {drilldown && <div className="queue-drilldown" role="status"><span>{drilldown.ownerName ? `Ответственный: ${drilldown.ownerName}` : drilldown.productName ? `Продукт: ${drilldown.productName}` : `Этап: ${drilldown.stageLabel}`}</span><button className="text-button" onClick={() => setDrilldown(null)}>Сбросить фильтр</button></div>}
@@ -1209,7 +1245,7 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
 }
 
 const MANAGER_SEGMENTS: { key: Segment; label: string; value: (overview: ManagerOverview) => number }[] = [
-  { key: 'university', label: 'Вузы', value: (overview) => overview.metrics.byKind.university },
+  { key: 'university', label: 'Вузы и школы', value: (overview) => overview.metrics.byKind.university },
   { key: 'company', label: 'Компании', value: (overview) => overview.metrics.byKind.corporate },
   { key: 'individual', label: 'Физлица', value: (overview) => overview.metrics.byKind.individual },
 ];
@@ -1329,7 +1365,7 @@ function GuidanceHandbook({ api, canEditDrafts, canPublish }: { api: ApiCall; ca
     </div>
     {kind === 'individual' && <><div className="handbook-routes" role="group" aria-label="Версия маршрута индивидуальной заявки">
       <button type="button" className={individualRoute === 'v2' ? 'selected' : ''} aria-pressed={individualRoute === 'v2'} onClick={() => { setIndividualRoute('v2'); setSelectedId(''); }}>Новые заявки · 6 этапов</button>
-      <button type="button" className={individualRoute === 'legacy' ? 'selected' : ''} aria-pressed={individualRoute === 'legacy'} onClick={() => { setIndividualRoute('legacy'); setSelectedId(''); }}>Заявки прежнего процесса · 5 этапов</button>
+      <button type="button" className={individualRoute === 'legacy' ? 'selected' : ''} aria-pressed={individualRoute === 'legacy'} onClick={() => { setIndividualRoute('legacy'); setSelectedId(''); }}>Заявки до обновления · 5 этапов</button>
     </div><p className="handbook-route-note">Это версии процесса по времени создания заявки, а не разделение клиентов на новых и повторных.</p></>}
     {kind === 'university' && <p className="handbook-route-note">Пять крупных этапов — общий маршрут для первого и повторного взаимодействия с вузом. В карточке активности отдельно отслеживаются 13 пунктов работы и сквозной контроль исполнения.</p>}
     {error && <section className="panel handbook-empty" role="status"><h2>Справочник недоступен</h2><p>{error}</p><button className="secondary" onClick={() => void refresh()}>Повторить</button></section>}
@@ -1430,11 +1466,11 @@ function CmsIntakePage({ items, loading, busy, onRefresh, onClaim }: {
   items: CmsIntake[]; loading: boolean; busy: boolean; onRefresh: () => void; onClaim: (id: string) => void;
 }) {
   return <div className="cms-intake-page">
-    <div className="page-heading"><div><div className="eyebrow">ВХОДЯЩИЕ ОБРАЩЕНИЯ</div><h1>Входящие с сайта</h1><p>Назначьте себе обращение, чтобы работать с ним в своей очереди.</p></div><button className="secondary" disabled={loading} onClick={onRefresh}>↻ {loading ? 'Обновляем…' : 'Обновить'}</button></div>
+    <div className="page-heading"><div><div className="eyebrow">ВХОДЯЩИЕ ОБРАЩЕНИЯ</div><h1>Входящие без ответственного</h1><p>Здесь только неназначенные обращения из CMS. Заявки публичной формы сразу попадают ответственному КАМ в очередь и уведомления.</p></div><button className="secondary" disabled={loading} onClick={onRefresh}>↻ {loading ? 'Обновляем…' : 'Обновить'}</button></div>
     {items.length ? <div className="cms-intake-list">{items.map((item) => <article className="panel cms-intake-row" key={item.id}>
       <div><div className="eyebrow">ТЕСТОВАЯ СРЕДА CMS · {KIND_LABEL[item.kind]}</div><h2>{item.organizationName ?? item.personName ?? item.title}</h2><p>{item.title}</p><small>Внешний ключ {item.originReference} · {formatDate(item.createdAt)}</small></div>
       <button className="primary" disabled={busy} onClick={() => onClaim(item.id)}>{busy ? 'Назначаем…' : 'Взять в работу'}</button>
-    </article>)}</div> : <section className="panel cms-intake-empty" aria-live="polite"><span className="cms-intake-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7.5 5.1 4h13.8L21 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M3 8h5l1.5 2h5L16 8h5M9 15h6"/></svg></span><div><h2>{loading ? 'Загружаем обращения…' : 'Неназначенных обращений нет'}</h2><p>Новые обращения появятся здесь после загрузки из CMS.</p></div></section>}
+    </article>)}</div> : <section className="panel cms-intake-empty" aria-live="polite"><span className="cms-intake-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7.5 5.1 4h13.8L21 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M3 8h5l1.5 2h5L16 8h5M9 15h6"/></svg></span><div><h2>{loading ? 'Загружаем обращения…' : 'Неназначенных обращений нет'}</h2><p>Заявки публичной формы назначаются автоматически и видны в «Все активности». Здесь появятся только неназначенные обращения из CMS.</p></div></section>}
   </div>;
 }
 
@@ -1856,8 +1892,27 @@ function ReportsPage({ api, token, hasManagerAccess, onOpenActivity }: { api: Ap
   </div>;
 }
 
-function ManagerPortfolio({ overview, loading, onRefresh, onQueue }: {
+function TeamPage({ overview, kams, owner, onOwnerChange, loading, onRefresh, api, onOpenActivity, onQueue }: {
+  overview: ManagerOverview | null; kams: ManagerKam[]; owner: string; onOwnerChange: (sub: string) => void;
+  loading: boolean; onRefresh: () => void; api: ApiCall; onOpenActivity: (id: string) => void;
+  onQueue: (sub: string, name: string, collection: Collection) => void;
+}) {
+  const people = kams.map((kam) => ({ ...kam, metrics: overview?.byOwner.find((row) => row.ownerSub === kam.sub) }));
+  return <div className="team-page">
+    <div className="page-heading"><div><div className="eyebrow">ЛЮДИ · ПОРТФЕЛЬ · ДЕЙСТВИЯ</div><h1>Команда</h1><p>Ответственные за CRM-активности и последние обновления по их работе.</p></div><button className="secondary" disabled={loading} onClick={onRefresh}>{loading ? 'Обновляем…' : 'Обновить показатели'}</button></div>
+    <section aria-labelledby="team-people-title"><div className="section-top"><div><div className="eyebrow">ОТВЕТСТВЕННЫЕ</div><h2 id="team-people-title">Сотрудники</h2></div><span className="manager-units">{people.length} в команде</span></div>
+      {people.length ? <div className="team-grid">{people.map((person) => <article className={`team-card panel${owner === person.sub ? ' is-selected' : ''}`} key={person.sub}>
+        <div className="team-card-head"><UserAvatar name={person.name} className="team-avatar" /><div><h3>{person.name}</h3><p>КАМ · ответственный за взаимодействия с клиентами</p></div></div>
+        <div className="team-card-metrics"><button type="button" onClick={() => onQueue(person.sub, person.name, 'all')}><strong>{person.metrics?.open ?? 0}</strong><span>Открыто</span></button><button type="button" onClick={() => onQueue(person.sub, person.name, 'overdue')}><strong>{person.metrics?.overdue ?? 0}</strong><span>Просрочено</span></button></div>
+        <button type="button" className="team-card-updates" aria-pressed={owner === person.sub} onClick={() => onOwnerChange(owner === person.sub ? '' : person.sub)}>{owner === person.sub ? 'Показать всю команду' : 'Показать обновления'} <span aria-hidden="true">↘</span></button>
+      </article>)}</div> : <div className="panel"><p className="muted-copy">{loading ? 'Загружаем команду…' : 'Сотрудники пока не найдены.'}</p></div>}</section>
+    <ActivityFeedPage api={api} manager kams={kams} owner={owner} onOwnerChange={onOwnerChange} embedded onOpenActivity={onOpenActivity} />
+  </div>;
+}
+
+function ManagerPortfolio({ overview, loading, onRefresh, onQueue, onOpenOwner }: {
   overview: ManagerOverview | null; loading: boolean; onRefresh: () => void; onQueue: (segment: Segment, collection: Collection, drilldown?: QueueDrilldown) => void;
+  onOpenOwner: (sub: string) => void;
 }) {
   if (!overview) return <section className="manager-empty panel"><div className="eyebrow">ПОРТФЕЛЬ КОМАНДЫ</div><h1>Открытые взаимодействия</h1><p>{loading ? 'Загружаем срез портфеля…' : 'Не удалось загрузить портфель.'}</p>{!loading && <button className="secondary" onClick={onRefresh}>Повторить</button>}</section>;
   const { metrics } = overview;
@@ -1895,7 +1950,7 @@ function ManagerPortfolio({ overview, loading, onRefresh, onQueue }: {
       <button className="manager-snapshot-main" onClick={() => onQueue('all', 'all')} aria-label={`Открыто в портфеле: ${metrics.totalOpen}. Показать все активности.`}>
         <span className="manager-snapshot-kicker">В РАБОТЕ СЕЙЧАС <span aria-hidden="true">↗</span></span>
         <span className="manager-snapshot-total"><strong>{metrics.totalOpen}</strong><span>открытых<br />взаимодействий</span></span>
-        <span className="manager-snapshot-caption">Вузы · компании · физлица<br />Откройте полный портфель команды</span>
+        <span className="manager-snapshot-caption">Вузы и школы · компании · физлица<br />Откройте полный портфель команды</span>
         <span className="manager-snapshot-mark" aria-hidden="true" />
       </button>
       <div className="manager-snapshot-signals" aria-label="Требуют внимания">
@@ -1946,8 +2001,8 @@ function ManagerPortfolio({ overview, loading, onRefresh, onQueue }: {
     <section className="pipeline-panel panel" aria-labelledby="pipeline-title">
       <div className="section-top"><div><div className="eyebrow">СОСТОЯНИЕ ПОРТФЕЛЯ</div><h2 id="pipeline-title">Где находятся открытые активности</h2></div><span className="manager-units">Текущий этап · шт.</span></div>
       <p className="manager-panel-note">Каждая активность показана на своём текущем этапе; при возврате учитывается фактический этап. Полная длина маркера соответствует {maxStageCount ? formatRussianCount(maxStageCount, 'активность', 'активности', 'активностей') : 'нулевому количеству активностей'} на общей шкале маршрутов. Возраст указан для самой давно не обновлявшейся записи на этапе; физлица разделены по версиям маршрута.</p>
-      <div className="pipeline-lanes">{overview.pipeline.map((lane) => <section className={`pipeline-lane pipeline-${lane.kind} pipeline-${lane.routeVersion}`} key={`${lane.kind}:${lane.routeVersion}`} aria-label={`${lane.kind === 'university' ? 'Вузы' : lane.kind === 'corporate' ? 'Компании' : 'Физлица'} · ${lane.routeLabel}`}>
-        <div className="pipeline-lane-heading"><span className={`kind-icon ${lane.kind}`} aria-hidden="true">{lane.kind === 'university' ? 'У' : lane.kind === 'corporate' ? 'К' : 'Ф'}</span><div><b>{lane.kind === 'university' ? 'Вузы' : lane.kind === 'corporate' ? 'Компании' : 'Физлица'}</b><small>{lane.routeLabel}</small></div></div>
+      <div className="pipeline-lanes">{overview.pipeline.map((lane) => <section className={`pipeline-lane pipeline-${lane.kind} pipeline-${lane.routeVersion}`} key={`${lane.kind}:${lane.routeVersion}`} aria-label={`${lane.kind === 'university' ? 'Вузы и школы' : lane.kind === 'corporate' ? 'Компании' : 'Физлица'} · ${lane.routeLabel}`}>
+        <div className="pipeline-lane-heading"><span className={`kind-icon pipeline-kind-icon ${lane.kind}`} aria-hidden="true"><img src={lane.kind === 'university' ? '/icons/school.png' : lane.kind === 'corporate' ? '/icons/office.png' : lane.routeVersion === 'legacy' ? '/icons/person-a.png' : '/icons/person-b.png'} alt="" /></span><div><b>{lane.kind === 'university' ? 'Вузы и школы' : lane.kind === 'corporate' ? 'Компании' : 'Физлица'}</b><small>{lane.routeLabel}</small></div></div>
         <div className="pipeline-stages">{lane.stages.every((stage) => stage.count === 0) ? <p className="pipeline-lane-empty">Открытых активностей на этом маршруте нет.</p> : lane.stages.map((stage, index) => {
           const oldest = stage.oldestUpdatedAt ? Math.max(0, Math.floor((Date.parse(overview.asOf) - Date.parse(stage.oldestUpdatedAt)) / 86400000)) : null;
           const segment: Segment = lane.kind === 'university' ? 'university' : lane.kind === 'corporate' ? 'company' : 'individual';
@@ -1963,7 +2018,7 @@ function ManagerPortfolio({ overview, loading, onRefresh, onQueue }: {
     <div className="manager-detail-grid">
       <section className="manager-panel panel" aria-labelledby="manager-owners-title">
         <div className="section-top"><div><div className="eyebrow">НАГРУЗКА</div><h2 id="manager-owners-title">По ответственным</h2></div></div>
-        {overview.byOwner.length ? <div className="manager-table-wrap"><table className="manager-table"><thead><tr><th>КАМ</th><th>Открыто</th><th>Просрочено</th></tr></thead><tbody>{overview.byOwner.map((owner) => <tr key={owner.ownerSub}><th scope="row"><button className="manager-drilldown-link" onClick={() => onQueue('all', 'all', { ownerSub: owner.ownerSub, ownerName: owner.ownerName })} aria-label={`Показать портфель ${owner.ownerName}: ${formatRussianCount(owner.open, 'активность', 'активности', 'активностей')}`}>{owner.ownerName} <span aria-hidden="true">↗</span></button></th><td>{owner.open}</td><td className={owner.overdue ? 'manager-overdue' : ''}>{owner.overdue}</td></tr>)}</tbody></table></div> : <p className="manager-panel-note">Открытых активностей нет.</p>}
+        {overview.byOwner.length ? <div className="manager-table-wrap"><table className="manager-table"><thead><tr><th>КАМ</th><th>Открыто</th><th>Просрочено</th></tr></thead><tbody>{overview.byOwner.map((owner) => <tr key={owner.ownerSub}><th scope="row"><button className="manager-drilldown-link" onClick={() => onOpenOwner(owner.ownerSub)} aria-label={`Открыть ${owner.ownerName} в Команде`}>{owner.ownerName} <span aria-hidden="true">↗</span></button></th><td>{owner.open}</td><td className={owner.overdue ? 'manager-overdue' : ''}>{owner.overdue}</td></tr>)}</tbody></table></div> : <p className="manager-panel-note">Открытых активностей нет.</p>}
       </section>
       <section className="manager-panel panel" aria-labelledby="manager-products-title">
         <div className="section-top"><div><div className="eyebrow">СВЯЗИ</div><h2 id="manager-products-title">Продукты</h2></div></div>

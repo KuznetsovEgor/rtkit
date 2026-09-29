@@ -29,10 +29,10 @@ type LaneDefinition = {
 type LaneData = LaneDefinition & ActivityPage;
 
 const LANES: LaneDefinition[] = [
-  { id: 'university', segment: 'university', label: 'Партнёрства с вузами', context: 'Общий маршрут' },
+  { id: 'university', segment: 'university', label: 'Партнёрства с вузами и школами', context: 'Общий маршрут' },
   { id: 'corporate', segment: 'company', label: 'Корпоративное обучение', context: 'Маршрут компании' },
-  { id: 'individual-legacy', segment: 'individual', routeVersion: 'legacy', label: 'Индивидуальное обучение', context: 'Прежний процесс' },
-  { id: 'individual-v2', segment: 'individual', routeVersion: 'v2', label: 'Индивидуальное обучение', context: 'Текущий процесс' },
+  { id: 'individual-legacy', segment: 'individual', routeVersion: 'legacy', label: 'Индивидуальное обучение', context: 'Заявки до обновления маршрута' },
+  { id: 'individual-v2', segment: 'individual', routeVersion: 'v2', label: 'Индивидуальное обучение', context: 'Заявки по новой схеме' },
 ];
 
 function requestPath(lane: LaneDefinition) {
@@ -105,7 +105,7 @@ export function KamPipeline({ api, onOpenQueue }: {
 
   return <section className="kam-pipeline panel" aria-labelledby="kam-pipeline-title">
     <div className="kam-pipeline-heading">
-      <div><div className="eyebrow">МОЙ ПОРТФЕЛЬ</div><h2 id="kam-pipeline-title">Положение и следующий рубеж</h2>
+      <div><div className="eyebrow">МОЙ КЛИЕНТСКИЙ ПОРТФЕЛЬ</div><h2 id="kam-pipeline-title">Положение и следующий рубеж</h2>
         <p>Показываем текущую стадию и разрешённый следующий переход для открытых активностей.</p>
       </div>
       <button className="secondary" type="button" onClick={() => setRevision((value) => value + 1)}>Обновить</button>
@@ -126,6 +126,6 @@ export function KamPipeline({ api, onOpenQueue }: {
         </button>
       </section>)}
     </div>}
-    <p className="kam-pipeline-footnote">У индивидуального обучения прежний и текущий маршруты показаны отдельно. Этапы не складываются в процент завершения.</p>
+    <p className="kam-pipeline-footnote">Версия маршрута зависит от времени заявки, а не от того, обращается ли клиент повторно.</p>
   </section>;
 }

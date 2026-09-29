@@ -3,17 +3,20 @@ import { UserAvatar } from './user-avatar';
 
 type ApiCall = <T,>(path: string, init?: RequestInit) => Promise<T>;
 type FeedItem = { id: string; activityId: string; activityTitle: string; kind: string; eventType: string; summary: string; actorSub: string; actorName: string; createdAt: string; taskId?: string; text?: string };
-type Notification = { id: string; activityId: string; activityTitle: string; taskId: string; eventType: string; summary: string; actorName: string; createdAt: string; readAt: string | null; text?: string };
+type Notification = { id: string; activityId: string; activityTitle: string; taskId: string | null; eventType: string; summary: string; actorName: string; createdAt: string; readAt: string | null; text?: string };
 type Page<T> = { items: T[]; nextCursor: string | null };
 type NotificationPage = Page<Notification> & { unreadCount: number };
 
 const date = (value: string) => new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' }).format(new Date(value));
 const message = (error: unknown) => error instanceof Error ? error.message : 'Не удалось загрузить данные.';
 
-export function ActivityFeedPage({ api, manager, kams, onOpenActivity }: {
+export function ActivityFeedPage({ api, manager, kams, onOpenActivity, owner: controlledOwner, onOwnerChange, embedded = false }: {
   api: ApiCall; manager: boolean; kams: { sub: string; name: string }[]; onOpenActivity: (id: string) => void;
+  owner?: string; onOwnerChange?: (owner: string) => void; embedded?: boolean;
 }) {
-  const [owner, setOwner] = useState('');
+  const [localOwner, setLocalOwner] = useState('');
+  const owner = controlledOwner ?? localOwner;
+  const setOwner = onOwnerChange ?? setLocalOwner;
   const [items, setItems] = useState<FeedItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -45,7 +48,7 @@ export function ActivityFeedPage({ api, manager, kams, onOpenActivity }: {
     finally { if (currentVersion === requestVersion.current) setBusy(false); }
   }
   return <div className="activity-updates-page">
-    <div className="page-heading"><div><div className="eyebrow">РАБОТА С КЛИЕНТАМИ</div><h1>{manager ? 'Движение команды' : 'Мои действия'}</h1><p>{manager ? 'Хронология действий КАМ по доступным активностям' : 'Ваши действия по доступным активностям'}</p></div><button className="secondary" onClick={() => { requestVersion.current++; setRevision((value) => value + 1); }}>Обновить</button></div>
+    <div className="page-heading"><div><div className="eyebrow">РАБОТА С КЛИЕНТАМИ</div>{embedded ? <h2>Обновления команды</h2> : <h1>{manager ? 'Движение команды' : 'Мои действия'}</h1>}<p>{manager ? 'Хронология действий КАМ по доступным активностям' : 'Ваши действия по доступным активностям'}</p></div><button className="secondary" onClick={() => { requestVersion.current++; setRevision((value) => value + 1); }}>Обновить</button></div>
     <section className="panel activity-updates-panel" aria-label="Лента действий">
       {manager && <label className="field activity-feed-filter"><span>Автор действия</span><select value={owner} onChange={(event) => { requestVersion.current++; setItems([]); setCursor(null); setOwner(event.target.value); }}><option value="">Вся команда</option>{kams.map((kam) => <option key={kam.sub} value={kam.sub}>{kam.name}</option>)}</select></label>}
       {error && <p className="activity-updates-error" role="alert">{error}</p>}
@@ -93,10 +96,10 @@ export function NotificationsPage({ api, onOpenActivity, onRead }: { api: ApiCal
     onOpenActivity(item.activityId);
   }
   return <div className="activity-updates-page">
-    <div className="page-heading"><div><div className="eyebrow">ПОДПИСКИ НА ЗАДАЧИ</div><h1>Уведомления</h1><p>Новые записи и завершения задач, на которые вы подписаны</p></div><button className="secondary" onClick={() => { requestVersion.current++; setRevision((value) => value + 1); }}>Обновить</button></div>
+    <div className="page-heading"><div><div className="eyebrow">ТРЕБУЮТ ВАШЕГО ВНИМАНИЯ</div><h1>Уведомления</h1><p>Новые назначенные заявки и события по задачам, на которые вы подписаны</p></div><button className="secondary" onClick={() => { requestVersion.current++; setRevision((value) => value + 1); }}>Обновить</button></div>
     <section className="panel activity-updates-panel" aria-label="Уведомления">
       {error && <p className="activity-updates-error" role="alert">{error}</p>}
-      {busy && items.length === 0 ? <p className="muted-copy">Загружаем уведомления…</p> : items.length === 0 ? <p className="muted-copy">Новых уведомлений пока нет. Подпишитесь на задачу в карточке.</p> : <ol className="activity-update-list">{items.map((item) => <li key={item.id} className={item.readAt ? '' : 'is-unread'}><span className="activity-update-dot" aria-hidden="true"/><div><div className="activity-update-heading"><b>{item.summary}</b><time dateTime={item.createdAt}>{date(item.createdAt)}</time></div>{item.text && <details className="activity-update-text"><summary>Текст обновления</summary><p>{item.text}</p></details>}<p>{item.actorName} · {item.activityTitle}</p><button type="button" className="activity-update-link" onClick={() => void open(item)}>{item.readAt ? 'Открыть карточку' : 'Прочитать и открыть карточку'}</button></div></li>)}</ol>}
+      {busy && items.length === 0 ? <p className="muted-copy">Загружаем уведомления…</p> : items.length === 0 ? <p className="muted-copy">Уведомлений пока нет.</p> : <ol className="activity-update-list">{items.map((item) => <li key={item.id} className={item.readAt ? '' : 'is-unread'}><span className="activity-update-dot" aria-hidden="true"/><div><div className="activity-update-heading"><b>{item.summary}</b><time dateTime={item.createdAt}>{date(item.createdAt)}</time></div>{item.text && <details className="activity-update-text"><summary>Текст обновления</summary><p>{item.text}</p></details>}<p>{item.actorName} · {item.activityTitle}</p><button type="button" className="activity-update-link" onClick={() => void open(item)}>{item.readAt ? 'Открыть карточку' : 'Прочитать и открыть карточку'}</button></div></li>)}</ol>}
       {cursor && <button className="secondary" disabled={busy} onClick={() => void more()}>{busy ? 'Загружаем…' : 'Показать ещё'}</button>}
     </section>
   </div>;
