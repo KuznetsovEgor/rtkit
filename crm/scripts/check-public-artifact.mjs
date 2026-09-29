@@ -23,8 +23,15 @@ for (const filename of ['index.html', 'request.css', 'request.js']) {
   const content = await readFile(path.join(root, 'dist/request', filename), 'utf8').catch(() => '');
   if (!content) throw new Error(`Public intake page asset is missing: ${filename}.`);
 }
-const cat = await readFile(path.join(root, 'dist/request/cat-mascot.png')).catch(() => null);
-if (!cat || cat.length < 1024) throw new Error('Public intake cat mascot is missing or empty.');
+// Validate the files the page actually loads, including the current mascot.
+const intakeHtml = await readFile(path.join(root, 'dist/request/index.html'), 'utf8');
+const requestDirectory = path.join(root, 'dist/request');
+for (const [, url] of intakeHtml.matchAll(/(?:src|href)=["'](\/request\/[^"']+)["']/g)) {
+  const filename = path.resolve(root, 'dist', `.${url}`);
+  if (!filename.startsWith(`${requestDirectory}${path.sep}`)) throw new Error('Invalid public intake asset path.');
+  const content = await readFile(filename).catch(() => null);
+  if (!content?.length) throw new Error(`Referenced public intake asset is missing or empty: ${url}`);
+}
 for (const value of ['http://localhost:3001', 'http://127.0.0.1:3001']) {
   if (intakeConfig.includes(value)) throw new Error(`Local API origin leaked into the public intake config: ${value}`);
 }

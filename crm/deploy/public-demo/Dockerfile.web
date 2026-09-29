@@ -4,7 +4,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY api ./api
 COPY web ./web
-COPY index.html ./index.html
+COPY index.html tsconfig.json ./
 COPY scripts ./scripts
 ARG WEB_ORIGIN
 ARG VITE_API_URL

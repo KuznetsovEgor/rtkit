@@ -11,7 +11,7 @@
     "dev:lms": "tsx watch api/src/mock-lms.ts",
     "dev:web": "vite --config web/vite.config.ts --host 0.0.0.0",
     "dev:web:demo": "vite --config web/vite.config.ts --host 127.0.0.1",
-    "build": "tsc -p api/tsconfig.json && vite build --config web/vite.config.ts",
+    "build": "tsc --noEmit -p tsconfig.json && tsc -p api/tsconfig.json && vite build --config web/vite.config.ts",
     "build:public": "node scripts/check-public-build.mjs && npm run build && node scripts/write-public-intake-config.mjs dist/request/config.js && node scripts/check-public-artifact.mjs",
     "db:migrate": "tsx api/src/db/migrate.ts",
     "test": "NODE_ENV=test tsx --test api/test/*.test.ts",
