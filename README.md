@@ -15,6 +15,7 @@ CRM для работы с вузами, компаниями и заявкам�
 | --- | --- | --- |
 | КАМ | `kam.anna` | `pVp8TzOG2Rhemmyq7A3vewV8G5LI5UKk06Dc9Ezc1dE` |
 | Второй КАМ | `kam.dmitry` | `C_cMfLMxrlHUEdIrRlMMYCIn1WttCOhdBCnfx4wF_go` |
+| КАМ | `kam.polina` | `C-Xw64F13fJhRXKn_5OL-Vb-NZwZMiwgynDejtY5iHQ` |
 | Руководитель | `manager` | `hKQqd4wTzS7gHLw81hyXftr0a7Rg1kISuBhPJ8QvAsE` |
 | Администратор | `admin` | `dOsqu741Nq5YT5ew1u1G4qwO-7dMBXY4kFYaRM3xcrU` |
 

@@ -13,6 +13,12 @@
 .education-product-type { display: inline-flex; align-items: center; min-height: 22px; padding: 3px 8px; border-radius: 99px; color: var(--crm-accent-text); background: var(--crm-accent-container); font-size: 9px; font-weight: 700; }
 .education-product-type.is-program { color: #4f6586; background: #edf1f8; }
 .education-product-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; color: var(--crm-accent-text); background: var(--crm-accent-container); font-size: 13px; font-weight: 700; }
+.education-product-mark.is-logo { padding: 3px; background: #fff; border: 1px solid var(--crm-border); }
+.education-product-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.education-product-fallback { display: none; }
+.education-product-mark.is-missing img { display: none; }
+.education-product-mark.is-missing .education-product-fallback { display: block; }
+.education-product-mark svg { width: 18px; height: 18px; }
 .education-product-card h2 { margin: 0 0 8px; color: var(--crm-ink); font-size: 15px; line-height: 1.35; letter-spacing: -.02em; }
 .education-product-audience { display: flex; flex-direction: column; gap: 3px; margin: 0 0 9px; color: var(--crm-ink); font-size: 10px; font-weight: 600; }
 .education-product-audience span { color: var(--crm-soft); font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }

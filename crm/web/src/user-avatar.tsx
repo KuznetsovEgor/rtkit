@@ -2,18 +2,21 @@ import annaPhoto from '../public/avatars/anna.jpg';
 import dmitryPhoto from '../public/avatars/dmitry.jpg';
 import elenaPhoto from '../public/avatars/elena.jpg';
 import alexeyPhoto from '../public/avatars/alexey.jpg';
+import polinaPhoto from '../public/avatars/polina.jpg';
 
 const profilePhotos: Record<string, string> = {
   anna: annaPhoto,
   dmitry: dmitryPhoto,
   elena: elenaPhoto,
   alexey: alexeyPhoto,
+  polina: polinaPhoto,
 };
 
 function portraitKey(name: string) {
   const value = name.trim().toLocaleLowerCase('ru-RU');
   if (value.includes('анна орлова') || value === 'kam.anna') return 'anna';
   if (value.includes('дмитрий соколов') || value === 'kam.dmitry') return 'dmitry';
+  if (value.includes('полина васильева') || value === 'kam.polina') return 'polina';
   if (value.includes('елена руководитель') || value === 'manager') return 'elena';
   if (value.includes('алексей администратор') || value === 'admin') return 'alexey';
   return null;

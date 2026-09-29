@@ -96,6 +96,20 @@ const ITEMS: EducationItem[] = [
 
 type Filter = 'all' | 'programs' | 'solutions';
 
+const PRODUCT_ICONS: Record<string, string> = {
+  akola: 'https://lukit.ru/assets/favicon--jvk22SX.svg',
+  basis: 'https://basis.ru/favicon.ico',
+  aurora: 'https://static.tildacdn.com/tild6339-3435-4530-a331-353638653064/_fav.png',
+  web3gate: 'https://www.web3gate.ru/favicon.ico',
+};
+
+function ProductMark({ item }: { item: EducationItem }) {
+  const productId = item.id.startsWith('akola') ? 'akola' : item.id;
+  const icon = PRODUCT_ICONS[productId];
+  if (icon) return <span className="education-product-mark is-logo" aria-hidden="true"><img src={icon} alt="" loading="lazy" onError={(event) => { event.currentTarget.parentElement?.classList.add('is-missing'); }} /><span className="education-product-fallback">{item.name.slice(0, 1)}</span></span>;
+  return <span className="education-product-mark is-program" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5.5h6a3 3 0 0 1 3 3v11a3 3 0 0 0-3-3H4zM20 5.5h-4a3 3 0 0 0-3 3v11a3 3 0 0 1 3-3h4z" /></svg></span>;
+}
+
 export function EducationProducts() {
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -117,7 +131,7 @@ export function EducationProducts() {
       <span className="education-products-count" aria-live="polite">{visible.length} {visible.length === 1 ? 'материал' : visible.length < 5 ? 'материала' : 'материалов'}</span>
     </section>
     {visible.length ? <div className="education-products-grid">{visible.map((item) => <article className="education-product-card" key={item.id}>
-      <div className="education-product-card-top"><span className={`education-product-type ${item.kind === 'Программа' ? 'is-program' : ''}`}>{item.kind}</span><span className="education-product-mark" aria-hidden="true">{item.name.slice(0, 1)}</span></div>
+      <div className="education-product-card-top"><span className={`education-product-type ${item.kind === 'Программа' ? 'is-program' : ''}`}>{item.kind}</span><ProductMark item={item} /></div>
       <h2>{item.name}</h2><p className="education-product-audience"><span>Для кого</span>{item.audience}</p>
       <p className="education-product-description">{item.description}</p>
       <details className="education-product-details">
