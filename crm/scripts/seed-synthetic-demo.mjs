@@ -27,50 +27,50 @@ const priorSeedUsers = [
 ];
 
 const organizations = [
-  { id: 'a1000000-0000-4000-8000-000000000001', name: 'Институт цифрового ремесла «Полярный маяк»', segment: 'university', createdAt: '2026-09-01T09:00:00.000Z' },
-  { id: 'a1000000-0000-4000-8000-000000000002', name: 'ООО «Синие орбиты»', segment: 'company', createdAt: '2026-09-01T09:05:00.000Z' },
-  { id: 'a1000000-0000-4000-8000-000000000003', name: 'Академия прикладной механики «Маяк-7»', segment: 'university', createdAt: '2026-09-01T09:25:00.000Z' },
-  { id: 'a1000000-0000-4000-8000-000000000004', name: 'ООО «Тихая гавань»', segment: 'company', createdAt: '2026-09-01T09:30:00.000Z' },
+  { id: 'a1000000-0000-4000-8000-000000000001', name: 'Северо-Западный технологический университет', segment: 'university', createdAt: '2026-09-01T09:00:00.000Z' },
+  { id: 'a1000000-0000-4000-8000-000000000002', name: 'ООО «Геоаналитика»', segment: 'company', createdAt: '2026-09-01T09:05:00.000Z' },
+  { id: 'a1000000-0000-4000-8000-000000000003', name: 'Колледж информационных технологий «Вектор»', segment: 'university', createdAt: '2026-09-01T09:25:00.000Z' },
+  { id: 'a1000000-0000-4000-8000-000000000004', name: 'АО «ПромСфера»', segment: 'company', createdAt: '2026-09-01T09:30:00.000Z' },
 ];
 
 const people = [
-  { id: 'a2000000-0000-4000-8000-000000000001', fullName: 'Ирина Снежная', organizationName: organizations[0].name, createdAt: '2026-09-01T09:10:00.000Z' },
-  { id: 'a2000000-0000-4000-8000-000000000002', fullName: 'Вера Синяя', organizationName: organizations[1].name, createdAt: '2026-09-01T09:15:00.000Z' },
+  { id: 'a2000000-0000-4000-8000-000000000001', fullName: 'Ирина Павлова', organizationName: organizations[0].name, createdAt: '2026-09-01T09:10:00.000Z' },
+  { id: 'a2000000-0000-4000-8000-000000000002', fullName: 'Вера Кузнецова', organizationName: organizations[1].name, createdAt: '2026-09-01T09:15:00.000Z' },
   { id: 'a2000000-0000-4000-8000-000000000003', fullName: 'Мира Левина', organizationName: null, createdAt: '2026-09-01T09:20:00.000Z' },
-  { id: 'a2000000-0000-4000-8000-000000000004', fullName: 'Надежда Лунная', organizationName: organizations[2].name, createdAt: '2026-09-01T09:35:00.000Z' },
-  { id: 'a2000000-0000-4000-8000-000000000005', fullName: 'Кирилл Туманов', organizationName: organizations[3].name, createdAt: '2026-09-01T09:40:00.000Z' },
+  { id: 'a2000000-0000-4000-8000-000000000004', fullName: 'Надежда Сорокина', organizationName: organizations[2].name, createdAt: '2026-09-01T09:35:00.000Z' },
+  { id: 'a2000000-0000-4000-8000-000000000005', fullName: 'Кирилл Фомин', organizationName: organizations[3].name, createdAt: '2026-09-01T09:40:00.000Z' },
   { id: 'a2000000-0000-4000-8000-000000000006', fullName: 'Олеся Ветрова', organizationName: null, createdAt: '2026-09-01T09:45:00.000Z' },
-  { id: 'a2000000-0000-4000-8000-000000000007', fullName: 'Тимур Ясный', organizationName: null, createdAt: '2026-09-01T09:50:00.000Z' },
+  { id: 'a2000000-0000-4000-8000-000000000007', fullName: 'Тимур Егоров', organizationName: null, createdAt: '2026-09-01T09:50:00.000Z' },
 ];
 
 const activities = [
   // Keep the original three seed rows unchanged so an already-created v1 demo database can be upgraded additively.
   {
     id: 'a3000000-0000-4000-8000-000000000001', kind: 'university',
-    title: 'Полярный маяк — встреча о цифровых навыках', organizationId: organizations[0].id,
+    title: 'Северо-Западный технологический университет — практикум по анализу данных', organizationId: organizations[0].id,
     personId: people[0].id, stageKey: 'meeting', routeVersion: 'legacy', owner: users[0], priority: 2,
     createdAt: '2026-09-08T09:00:00.000Z', updatedAt: '2026-09-17T13:00:00.000Z',
   },
   {
     id: 'a3000000-0000-4000-8000-000000000002', kind: 'corporate',
-    title: 'Синие орбиты — бриф на практикум по аналитике', organizationId: organizations[1].id,
+    title: 'Геоаналитика — обучение аналитиков работе с корпоративными данными', organizationId: organizations[1].id,
     personId: people[1].id, stageKey: 'brief', routeVersion: 'legacy', owner: users[0], priority: 1,
     createdAt: '2026-09-10T10:00:00.000Z', updatedAt: '2026-09-18T12:00:00.000Z',
   },
   {
     id: 'a3000000-0000-4000-8000-000000000003', kind: 'individual',
-    title: 'Мира Левина — запрос на консультацию', organizationId: null,
+    title: 'Мира Левина — консультация по программе аналитики данных', organizationId: null,
     personId: people[2].id, stageKey: 'consultation', routeVersion: 'v2', owner: users[0], priority: 3,
     createdAt: '2026-09-12T11:00:00.000Z', updatedAt: '2026-09-19T10:00:00.000Z',
   },
-  { id: 'a3000000-0000-4000-8000-000000000004', kind: 'university', title: 'Полярный маяк — запрос по программе для преподавателей', organizationId: organizations[0].id, personId: people[0].id, stageKey: 'contact', routeVersion: 'legacy', owner: users[0], priority: 4, initialStage: 'contact', createdAt: '2026-09-15T08:00:00.000Z', updatedAt: '2026-09-22T10:00:00.000Z' },
-  { id: 'a3000000-0000-4000-8000-000000000005', kind: 'university', title: 'Маяк-7 — встреча по учебным материалам', organizationId: organizations[2].id, personId: people[3].id, stageKey: 'meeting', routeVersion: 'legacy', owner: users[1], priority: 2, initialStage: 'contact', stageHistory: [{ from: 'contact', to: 'meeting', at: '2026-09-20T10:00:00.000Z' }], createdAt: '2026-09-11T09:00:00.000Z', updatedAt: '2026-09-23T09:00:00.000Z' },
-  { id: 'a3000000-0000-4000-8000-000000000006', kind: 'university', title: 'Маяк-7 — список документов для согласования', organizationId: organizations[2].id, personId: people[3].id, stageKey: 'documents', routeVersion: 'legacy', owner: users[1], priority: 1, initialStage: 'meeting', stageHistory: [{ from: 'meeting', to: 'documents', at: '2026-09-21T09:00:00.000Z' }], createdAt: '2026-09-14T10:00:00.000Z', updatedAt: '2026-09-23T13:00:00.000Z' },
-  { id: 'a3000000-0000-4000-8000-000000000007', kind: 'corporate', title: 'Синие орбиты — отдельный запрос на вводный практикум', organizationId: organizations[1].id, personId: people[1].id, stageKey: 'approval', routeVersion: 'legacy', owner: users[0], priority: 2, initialStage: 'qualification', stageHistory: [{ from: 'qualification', to: 'brief', at: '2026-09-18T09:00:00.000Z' }, { from: 'brief', to: 'approval', at: '2026-09-22T09:00:00.000Z' }], createdAt: '2026-09-13T09:00:00.000Z', updatedAt: '2026-09-24T10:00:00.000Z' },
-  { id: 'a3000000-0000-4000-8000-000000000008', kind: 'corporate', title: 'Тихая гавань — знакомство с направлением аналитики', organizationId: organizations[3].id, personId: people[4].id, stageKey: 'qualification', routeVersion: 'legacy', owner: users[1], priority: 5, initialStage: 'qualification', createdAt: '2026-09-16T10:00:00.000Z', updatedAt: '2026-09-20T15:00:00.000Z' },
-  { id: 'a3000000-0000-4000-8000-000000000009', kind: 'corporate', title: 'Тихая гавань — черновик образовательного брифа', organizationId: organizations[3].id, personId: people[4].id, stageKey: 'brief', routeVersion: 'legacy', owner: users[1], priority: 3, initialStage: 'qualification', stageHistory: [{ from: 'qualification', to: 'brief', at: '2026-09-22T10:00:00.000Z' }], createdAt: '2026-09-17T10:00:00.000Z', updatedAt: '2026-09-25T13:00:00.000Z' },
-  { id: 'a3000000-0000-4000-8000-000000000010', kind: 'individual', title: 'Олеся Ветрова — вопрос о формате консультации', organizationId: null, personId: people[5].id, stageKey: 'request', routeVersion: 'v2', owner: users[0], priority: 1, initialStage: 'request', createdAt: '2026-09-20T08:00:00.000Z', updatedAt: '2026-09-24T09:00:00.000Z' },
-  { id: 'a3000000-0000-4000-8000-000000000011', kind: 'individual', title: 'Тимур Ясный — подбор подходящего учебного направления', organizationId: null, personId: people[6].id, stageKey: 'conditions', routeVersion: 'v2', owner: users[1], priority: 2, initialStage: 'request', stageHistory: [{ from: 'request', to: 'consultation', at: '2026-09-23T09:00:00.000Z' }, { from: 'consultation', to: 'conditions', at: '2026-09-25T09:00:00.000Z' }], createdAt: '2026-09-21T08:30:00.000Z', updatedAt: '2026-09-26T14:00:00.000Z' },
+  { id: 'a3000000-0000-4000-8000-000000000004', kind: 'university', title: 'Северо-Западный технологический университет — повышение квалификации преподавателей', organizationId: organizations[0].id, personId: people[0].id, stageKey: 'contact', routeVersion: 'legacy', owner: users[0], priority: 4, initialStage: 'contact', createdAt: '2026-09-15T08:00:00.000Z', updatedAt: '2026-09-22T10:00:00.000Z' },
+  { id: 'a3000000-0000-4000-8000-000000000005', kind: 'university', title: 'Колледж «Вектор» — программа по веб-разработке для студентов', organizationId: organizations[2].id, personId: people[3].id, stageKey: 'meeting', routeVersion: 'legacy', owner: users[1], priority: 2, initialStage: 'contact', stageHistory: [{ from: 'contact', to: 'meeting', at: '2026-09-20T10:00:00.000Z' }], createdAt: '2026-09-11T09:00:00.000Z', updatedAt: '2026-09-23T09:00:00.000Z' },
+  { id: 'a3000000-0000-4000-8000-000000000006', kind: 'university', title: 'Колледж «Вектор» — согласование учебных материалов и лицензий', organizationId: organizations[2].id, personId: people[3].id, stageKey: 'documents', routeVersion: 'legacy', owner: users[1], priority: 1, initialStage: 'meeting', stageHistory: [{ from: 'meeting', to: 'documents', at: '2026-09-21T09:00:00.000Z' }], createdAt: '2026-09-14T10:00:00.000Z', updatedAt: '2026-09-23T13:00:00.000Z' },
+  { id: 'a3000000-0000-4000-8000-000000000007', kind: 'corporate', title: 'Геоаналитика — вводный практикум по визуализации данных', organizationId: organizations[1].id, personId: people[1].id, stageKey: 'approval', routeVersion: 'legacy', owner: users[0], priority: 2, initialStage: 'qualification', stageHistory: [{ from: 'qualification', to: 'brief', at: '2026-09-18T09:00:00.000Z' }, { from: 'brief', to: 'approval', at: '2026-09-22T09:00:00.000Z' }], createdAt: '2026-09-13T09:00:00.000Z', updatedAt: '2026-09-24T10:00:00.000Z' },
+  { id: 'a3000000-0000-4000-8000-000000000008', kind: 'corporate', title: 'ПромСфера — обучение инженеров цифровым инструментам', organizationId: organizations[3].id, personId: people[4].id, stageKey: 'qualification', routeVersion: 'legacy', owner: users[1], priority: 5, initialStage: 'qualification', createdAt: '2026-09-16T10:00:00.000Z', updatedAt: '2026-09-20T15:00:00.000Z' },
+  { id: 'a3000000-0000-4000-8000-000000000009', kind: 'corporate', title: 'ПромСфера — бриф для программы управления ИТ-проектами', organizationId: organizations[3].id, personId: people[4].id, stageKey: 'brief', routeVersion: 'legacy', owner: users[1], priority: 3, initialStage: 'qualification', stageHistory: [{ from: 'qualification', to: 'brief', at: '2026-09-22T10:00:00.000Z' }], createdAt: '2026-09-17T10:00:00.000Z', updatedAt: '2026-09-25T13:00:00.000Z' },
+  { id: 'a3000000-0000-4000-8000-000000000010', kind: 'individual', title: 'Олеся Ветрова — выбор формата обучения веб-разработке', organizationId: null, personId: people[5].id, stageKey: 'request', routeVersion: 'v2', owner: users[0], priority: 1, initialStage: 'request', createdAt: '2026-09-20T08:00:00.000Z', updatedAt: '2026-09-24T09:00:00.000Z' },
+  { id: 'a3000000-0000-4000-8000-000000000011', kind: 'individual', title: 'Тимур Егоров — подбор программы управления ИТ-проектами', organizationId: null, personId: people[6].id, stageKey: 'conditions', routeVersion: 'v2', owner: users[1], priority: 2, initialStage: 'request', stageHistory: [{ from: 'request', to: 'consultation', at: '2026-09-23T09:00:00.000Z' }, { from: 'consultation', to: 'conditions', at: '2026-09-25T09:00:00.000Z' }], createdAt: '2026-09-21T08:30:00.000Z', updatedAt: '2026-09-26T14:00:00.000Z' },
 ];
 
 const tasks = [
@@ -132,10 +132,10 @@ const activityPrograms = [
 ];
 
 const planBriefs = [
-  { expectedOutcome: 'Составить черновик практикума по аналитике данных.', audience: 'Проектная группа вымышленной компании.', entryLevel: 'Начальный уровень обсуждается.', deliveryFormat: 'Смешанный формат рассматривается.', volume: 'Несколько вводных занятий.', technologyContext: 'Пример связан с учебным каталогом аналитики.' },
+  { expectedOutcome: 'Составить черновик практикума по аналитике данных.', audience: 'Проектная группа компании.', entryLevel: 'Начальный уровень обсуждается.', deliveryFormat: 'Смешанный формат рассматривается.', volume: 'Несколько вводных занятий.', technologyContext: 'Пример связан с учебным каталогом аналитики.' },
   { expectedOutcome: 'Подготовить отдельный вводный практикум.', audience: 'Небольшая группа координаторов.', entryLevel: 'Без предварительных требований в сценарии.', deliveryFormat: 'Формат ещё не выбран.', volume: 'Короткий обзорный блок.', technologyContext: 'Направление связано с каталогом Базис.' },
-  { expectedOutcome: 'Обсудить цифровые процессы команды.', audience: 'Сотрудники вымышленной компании.', entryLevel: 'Уровень будет уточнён.', deliveryFormat: 'Рассматривается дистанционный формат.', volume: 'Объём пока не оценён.', technologyContext: 'Пример использует каталог RT.Web3Gate.' },
-  { expectedOutcome: 'Подготовить новую программу для проектной команды.', audience: 'Сотрудники проектной группы.', entryLevel: 'Состав группы уточняется.', deliveryFormat: 'Формат обсуждается.', volume: 'Черновая оценка объёма.', technologyContext: 'Направление выбрано для учебного примера.' },
+  { expectedOutcome: 'Обсудить цифровые процессы команды.', audience: 'Сотрудники компании.', entryLevel: 'Уровень будет уточнён.', deliveryFormat: 'Рассматривается дистанционный формат.', volume: 'Объём пока не оценён.', technologyContext: 'Рассматривается программа по RT.Web3Gate.' },
+  { expectedOutcome: 'Подготовить новую программу для проектной команды.', audience: 'Сотрудники проектной группы.', entryLevel: 'Состав группы уточняется.', deliveryFormat: 'Формат обсуждается.', volume: 'Черновая оценка объёма.', technologyContext: 'Направление выбрано после первичного брифа.' },
 ];
 const corporatePlans = activities.filter((activity) => activity.kind === 'corporate').map((activity, index) => ({
   activity, programMode: ['undecided', 'adapted', 'standard', 'new'][index], requestedPlaces: [18, 24, 12, 30][index],
@@ -162,42 +162,42 @@ const universityContractLicenses = [
     id: 'a6000000-0000-4000-8000-000000000001', activity: activities[0],
     title: 'Соглашение о сотрудничестве по цифровым навыкам', contractReference: null,
     contractStatus: 'unknown', licenseExpiryPrecision: null, licenseExpiresOn: null, licenseExpiresYear: null,
-    documentId: null, note: 'Синтетическая запись для демонстрации. Сведения о подписании и сроке действия не подтверждены; документ не приложен.',
+    documentId: null, note: 'Сведения о подписании и сроке действия не подтверждены; документ не приложен.',
     revision: 1, updatedAt: '2026-09-17T14:00:00.000Z',
   },
   {
     id: 'a6000000-0000-4000-8000-000000000002', activity: activities[0],
     title: 'Лицензия на учебные материалы по цифровым навыкам', contractReference: null,
     contractStatus: 'unknown', licenseExpiryPrecision: 'year', licenseExpiresOn: null, licenseExpiresYear: 2027,
-    documentId: null, note: 'Синтетическая запись для демонстрации. Срок указан только с точностью до года; конкретная дата не задана, документ не приложен.',
+    documentId: null, note: 'Срок указан только с точностью до года; конкретная дата не задана, документ не приложен.',
     revision: 1, updatedAt: '2026-09-17T14:05:00.000Z',
   },
   {
     id: 'a6000000-0000-4000-8000-000000000003', activity: activities[3],
     title: 'Дополнение к программе для преподавателей', contractReference: null,
     contractStatus: 'draft', licenseExpiryPrecision: null, licenseExpiresOn: null, licenseExpiresYear: null,
-    documentId: null, note: 'Черновик синтетического примера. Подписание не зафиксировано; документ не приложен.',
+    documentId: null, note: 'Подписание не зафиксировано; документ не приложен.',
     revision: 1, updatedAt: '2026-09-22T10:30:00.000Z',
   },
   {
     id: 'a6000000-0000-4000-8000-000000000004', activity: activities[4],
     title: 'Соглашение о проведении встречи по учебным материалам', contractReference: null,
     contractStatus: 'unknown', licenseExpiryPrecision: null, licenseExpiresOn: null, licenseExpiresYear: null,
-    documentId: null, note: 'Синтетическая запись для демонстрации. Сведения о подписании и сроке действия не подтверждены; документ не приложен.',
+    documentId: null, note: 'Сведения о подписании и сроке действия не подтверждены; документ не приложен.',
     revision: 1, updatedAt: '2026-09-23T09:05:00.000Z',
   },
   {
     id: 'a6000000-0000-4000-8000-000000000005', activity: activities[5],
     title: 'Лицензия на учебные материалы по прикладной механике', contractReference: null,
     contractStatus: 'unknown', licenseExpiryPrecision: 'year', licenseExpiresOn: null, licenseExpiresYear: 2028,
-    documentId: null, note: 'Синтетическая запись для демонстрации. Срок указан только с точностью до года; конкретная дата не задана, документ не приложен.',
+    documentId: null, note: 'Срок указан только с точностью до года; конкретная дата не задана, документ не приложен.',
     revision: 1, updatedAt: '2026-09-23T12:10:00.000Z',
   },
   {
     id: 'a6000000-0000-4000-8000-000000000006', activity: activities[5],
     title: 'Проект условий доступа к учебным материалам', contractReference: null,
     contractStatus: 'draft', licenseExpiryPrecision: null, licenseExpiresOn: null, licenseExpiresYear: null,
-    documentId: null, note: 'Черновик синтетического примера. Подписание не зафиксировано; документ не приложен.',
+    documentId: null, note: 'Подписание не зафиксировано; документ не приложен.',
     revision: 1, updatedAt: '2026-09-23T12:15:00.000Z',
   },
 ];
@@ -222,7 +222,7 @@ for (const activity of activities.slice(3)) {
     newActivityEvents.push(makeEvent({ activity, type: 'stage_changed', summary: `Стадия изменена: ${stageLabels[transition.to]}`, details: { from: transition.from, to: transition.to }, actor: activity.owner, at: transition.at }));
   }
   if (activity.kind === 'individual') {
-    newActivityEvents.push(makeEvent({ activity, type: 'outcome_recorded', summary: 'Итог контакта: ожидается ответ', details: { outcome: 'awaiting_reply', note: 'Ответ ожидается в рамках сценария.' }, actor: activity.owner, at: activity.updatedAt }));
+    newActivityEvents.push(makeEvent({ activity, type: 'outcome_recorded', summary: 'Итог контакта: ожидается ответ', details: { outcome: 'awaiting_reply', note: 'Ответ ожидается после консультации.' }, actor: activity.owner, at: activity.updatedAt }));
   }
   for (const task of tasks.filter((candidate) => candidate.activityId === activity.id)) {
     newActivityEvents.push(makeEvent({ activity, type: 'task_created', summary: `Поставлено действие: ${task.title}`, details: { taskId: task.id, dueAt: task.dueAt }, actor: task.owner, at: task.createdAt }));

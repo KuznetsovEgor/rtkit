@@ -152,7 +152,7 @@ test('fixture is deterministic, referentially valid, and covers all process and 
   assert.ok(universityContractLicenses.every((record) => record.activity.kind === 'university'));
   assert.ok(universityContractLicenses.every((record) => record.documentId === null && record.contractReference === null));
   assert.ok(universityContractLicenses.every((record) => ['draft', 'unknown'].includes(record.contractStatus)));
-  assert.ok(universityContractLicenses.every((record) => record.note.includes('Синтетическ') || record.note.includes('синтетического')));
+  assert.ok(universityContractLicenses.every((record) => !/Синтетическ|синтетического/i.test(record.note) && record.note.includes('документ не приложен')));
   assert.ok(universityContractLicenses.every((record) => record.licenseExpiryPrecision === 'year'
     ? Number.isInteger(record.licenseExpiresYear) && record.licenseExpiresOn === null
     : record.licenseExpiresYear === null && record.licenseExpiresOn === null));
