@@ -1111,7 +1111,14 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
       {hasQueueAccess && <button className={`nav-item ${!selected && activeView === 'notifications' ? 'active' : ''}`} aria-label={`Уведомления${unreadNotifications ? `, непрочитанных: ${unreadNotifications}` : ''}`} title="Уведомления" aria-current={!selected && activeView === 'notifications' ? 'page' : undefined} onClick={() => navigateToMobileView('notifications')}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="notifications" /></span><span className="nav-label-wide">Уведомления</span>{unreadNotifications > 0 && <span className="nav-count">{unreadNotifications}</span>}</button>}
       {hasKamAccess && <button className={`nav-item ${!selected && activeView === 'cms-intake' ? 'active' : ''}`} aria-label="Входящие без ответственного" title="Входящие без ответственного" aria-current={!selected && activeView === 'cms-intake' ? 'page' : undefined} onClick={() => { if (!leaveDetail()) return; setActiveView('cms-intake'); setError(''); }}><span className="nav-icon" aria-hidden="true"><NavigationIcon name="intake" /></span><span className="nav-label-wide">Без ответственного</span><span className="nav-label-mobile" aria-hidden="true">Входящие</span></button>}
       {(hasQueueAccess || hasAdminAccess) && <div className={`nav-group${!selected && ['handbook', 'products'].includes(activeView) ? ' active' : ''}`}>
-        <button type="button" className={`nav-item nav-group-trigger ${!selected && ['handbook', 'products'].includes(activeView) ? 'active' : ''}`} aria-label="Обучение" title="Обучение" aria-expanded={learningNavOpen} aria-controls="learning-subnav" onClick={() => setLearningNavOpen((open) => !open)}>
+        <button type="button" className={`nav-item nav-group-trigger ${!selected && ['handbook', 'products'].includes(activeView) ? 'active' : ''}`} aria-label="Обучение" title="Обучение" aria-expanded={learningNavOpen && !sidebarCollapsed} aria-controls="learning-subnav" onClick={() => {
+          if (sidebarCollapsed) {
+            setSidebarCollapsed(false);
+            setLearningNavOpen(true);
+          } else {
+            setLearningNavOpen((open) => !open);
+          }
+        }}>
           <span className="nav-icon" aria-hidden="true"><NavigationIcon name="handbook" /></span><span className="nav-label-wide">Обучение</span><span className="nav-label-mobile" aria-hidden="true">Обучение</span><span className="nav-group-chevron" aria-hidden="true">{learningNavOpen ? '⌄' : '›'}</span>
         </button>
         {learningNavOpen && <div id="learning-subnav" className="nav-subnav">
