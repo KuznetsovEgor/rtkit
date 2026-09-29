@@ -1,0 +1,53 @@
+/* Local to activity details; queue, team and shared controls keep their own styles. */
+.detail-page .activity-focus { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 16px; margin: 0 0 20px; padding: 14px 18px; border: 1px solid var(--crm-border); border-left: 3px solid var(--crm-accent); border-radius: 10px; background: var(--crm-surface); box-shadow: 0 6px 18px color-mix(in srgb, var(--crm-ink) 6%, transparent); }
+.activity-focus-copy { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.activity-focus-copy > span { color: var(--crm-muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; }
+.activity-focus-copy strong { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--crm-ink); font-size: 14px; font-weight: 700; line-height: 1.4; }
+.activity-focus-copy time { color: var(--crm-soft); font-size: 11px; }
+.activity-focus-copy time.is-overdue { color: var(--crm-danger); }
+.activity-focus-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.activity-focus-actions button { min-height: 40px; font-size: 12px; }
+.detail-page .activity-focus-target { scroll-margin-top: 130px; }
+.detail-page .action-panel { border-top: 3px solid var(--crm-accent); }
+.detail-page .action-panel h2 { font-size: 20px; line-height: 1.35; letter-spacing: -.025em; }
+.detail-page .action-panel .task-meta { padding: 12px; border-radius: 7px; background: var(--crm-accent-container); }
+.detail-page .history-panel { padding-bottom: 14px; }
+.detail-page .history-panel h2 { letter-spacing: -.025em; }
+.activity-event-list { list-style: none; margin: 0; padding: 0; }
+.activity-event-day { display: flex; justify-content: space-between; gap: 12px; margin: 20px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--crm-border); color: var(--crm-soft); font-size: 11px; font-weight: 650; }
+.activity-event-day > span { color: var(--crm-muted); font-size: 10px; font-weight: 500; }
+.activity-event { position: relative; display: flex; align-items: flex-start; gap: 13px; padding-bottom: 18px; }
+.activity-event::before { content: ''; position: absolute; top: 30px; bottom: 1px; left: 14px; width: 1px; background: var(--crm-border); }
+.activity-event-list > li:last-child .activity-event::before { display: none; }
+.activity-event-icon { display: grid; place-items: center; flex: 0 0 29px; height: 29px; border: 1px solid var(--crm-border); border-radius: 8px; color: var(--crm-soft); background: var(--crm-page); font-size: 16px; line-height: 1; }
+.event-contact .activity-event-icon { color: var(--crm-status-teal); background: var(--crm-status-teal-container); border-color: transparent; border-radius: 50%; }
+.event-done .activity-event-icon { color: var(--crm-success); background: var(--crm-success-container); border-color: transparent; }
+.event-stage .activity-event-icon { color: var(--crm-accent-text); background: var(--crm-accent-container); border-color: transparent; border-radius: 50%; }
+.event-document .activity-event-icon { border-radius: 3px; }
+.event-system .activity-event-icon { border-style: dashed; }
+.activity-event-body { flex: 1; min-width: 0; padding-top: 2px; }
+.activity-event-meta { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 5px; color: var(--crm-muted); font-size: 10px; }
+.activity-event-type { font-weight: 650; }
+.activity-event-meta time { font-variant-numeric: tabular-nums; }
+.activity-event h3 { margin: 0; color: var(--crm-ink); font-size: 13px; font-weight: 650; line-height: 1.55; overflow-wrap: anywhere; }
+.activity-event blockquote { margin: 9px 0 0; padding: 10px 12px; border-left: 2px solid var(--crm-border-control); border-radius: 0 6px 6px 0; color: var(--crm-soft); background: var(--crm-page); font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.activity-event-author { margin: 6px 0 0; color: var(--crm-muted); font-size: 11px; }
+.activity-history-more { border-top: 1px solid var(--crm-border); }
+.activity-history-more > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 10px 0; color: var(--crm-accent-text); font-size: 12px; cursor: pointer; list-style: none; }
+.activity-history-more > summary::-webkit-details-marker { display: none; }
+.activity-history-more > summary b { display: inline-block; min-width: 22px; margin-left: 5px; padding: 1px 5px; border-radius: 4px; color: var(--crm-muted); background: var(--crm-neutral-container); text-align: center; font-size: 10px; font-variant-numeric: tabular-nums; }
+.activity-history-more > summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+.activity-disclosure-arrow { display: inline-block; font-size: 18px; transition: transform .16s ease; }
+.activity-history-more[open] > summary .activity-disclosure-arrow { transform: rotate(180deg); }
+.activity-history-more[open] > .activity-event-list { animation: activity-reveal .16s ease-out; }
+.detail-page .outcome-form { animation: activity-reveal .16s ease-out; }
+.activity-focus button:focus-visible, .activity-history-more > summary:focus-visible { outline: 3px solid var(--crm-accent); outline-offset: 3px; }
+@keyframes activity-reveal { from { opacity: .4; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 740px) { .detail-page .activity-focus { flex-wrap: wrap; gap: 10px; padding: 12px; } .activity-focus-copy { flex-basis: 100%; } .activity-focus-actions { width: 100%; } .activity-focus-actions button { flex: 1; } .detail-page .activity-focus-target { scroll-margin-top: 195px; } }
+@media (max-width: 420px), (max-height: 600px) { .detail-page .activity-focus { position: static; } .detail-page .activity-focus-target { scroll-margin-top: 16px; } }
+@media (max-width: 420px) {
+  .detail-page .detail-queue-navigation button { min-width: 44px; flex: 0 0 44px; }
+  .detail-page .detail-queue-navigation button > span { display: none; }
+  .detail-page .detail-queue-navigation > span { flex: 1; white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) { .activity-disclosure-arrow { transition: none; } .activity-history-more[open] > .activity-event-list, .detail-page .outcome-form { animation: none; } }

@@ -5,6 +5,7 @@ import { UniversityWorkflowAdmin } from './university-workflow-admin';
 import { AccessUsers } from './access-users';
 import { ActivityFeedPage, NotificationsPage, TaskUpdates } from './activity-updates';
 import { KamDashboard } from './kam-dashboard';
+import { ActivityTimeline } from './ActivityTimeline';
 import { ProgramCatalog, type LearningProgram } from './program-catalog';
 import { EducationProducts } from './education-products';
 import { formatRussianCount, russianNounForm } from './russian-count';
@@ -1930,7 +1931,7 @@ function ManagerPortfolio({ overview, loading, onRefresh, onQueue, onOpenOwner }
     { label: 'Ожидают ответа', value: metrics.awaitingReply, hint: 'зафиксирован такой исход контакта', collection: 'awaiting_reply' },
     { label: 'Без следующего шага', value: metrics.noNextStep, hint: 'нет открытой задачи', collection: 'no_next_step' },
   ];
-  const segmentColors: Record<Segment, string> = {
+  const segmentColors: Partial<Record<Segment, string>> = {
     university: 'var(--crm-accent)',
     company: 'var(--crm-success)',
     individual: 'var(--crm-warning)',
@@ -2733,7 +2734,19 @@ function ActivityDetail({ item, contacts, products, managerKams, canReassign, cu
   const visibleHistory = historyAuthor ? history.filter((event) => event.actorSub === historyAuthor) : history;
   const historyAuthors = [...new Map(history.map((event) => [event.actorSub, event.actorName])).entries()];
   const [firstOpenTask, ...otherOpenTasks] = openTasks;
-  const renderTimelineEntry = (event: Event) => <div className="timeline-entry" key={event.id}><span className={`timeline-dot ${event.eventType}`} /><div className="timeline-copy"><b>{outcomeLabel(event)}</b><p>{event.actorName} · {formatDate(event.createdAt)}</p>{typeof event.details?.note === 'string' && event.details.note && <blockquote>{event.details.note}</blockquote>}{typeof event.details?.text === 'string' && event.details.text && <blockquote>{event.details.text}</blockquote>}</div></div>;
+  const actionPanelRef = useRef<HTMLElement>(null);
+  const outcomePanelRef = useRef<HTMLElement>(null);
+  const [focusOutcome, setFocusOutcome] = useState(false);
+  const scrollToPanel = (panel: HTMLElement | null) => {
+    panel?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    const field = panel?.querySelector<HTMLElement>('input, select, textarea') ?? panel?.querySelector<HTMLElement>('button');
+    field?.focus({ preventScroll: true });
+  };
+  useEffect(() => {
+    if (!focusOutcome || !showOutcome) return;
+    scrollToPanel(outcomePanelRef.current);
+    setFocusOutcome(false);
+  }, [focusOutcome, showOutcome]);
 
   return <div className="detail-page">
     <div className="detail-top"><button className="back-button" onClick={onBack}>← <span>{returnLabel}</span></button>{queuePosition && <nav className="detail-queue-navigation" aria-label="Навигация по загруженной части списка"><button type="button" className="secondary" aria-label="Предыдущая активность" title="Предыдущая активность в загруженной части списка" disabled={busy || queuePosition.index <= 1} onClick={() => onQueueNavigate(-1)}>← <span>Предыдущая</span></button><span aria-live="polite">{queuePosition.index} из {queuePosition.total} загруженных</span><button type="button" className="secondary" aria-label="Следующая активность" title="Следующая активность в загруженной части списка" disabled={busy || queuePosition.index >= queuePosition.total} onClick={() => onQueueNavigate(1)}><span>Следующая</span> →</button></nav>}<span className="detail-date">Обновлено {formatDate(item.updatedAt)}</span><button className="refresh-button" disabled={busy} onClick={onRefresh} title="Обновить карточку">↻</button></div>
@@ -2744,11 +2757,15 @@ function ActivityDetail({ item, contacts, products, managerKams, canReassign, cu
       {(item.personEmail ?? item.email) && <a href={`mailto:${encodeURIComponent(item.personEmail ?? item.email ?? '')}`}>Написать · {item.personEmail ?? item.email}</a>}
     </div>}
 
+    {!item.closed && <aside className="activity-focus" aria-label="Следующее действие по активности">
+      <div className="activity-focus-copy"><span>БЛИЖАЙШЕЕ ДЕЙСТВИЕ</span><strong>{firstOpenTask?.title ?? 'Следующий шаг не задан'}</strong>{firstOpenTask && <time className={Date.parse(firstOpenTask.dueAt) < Date.now() ? 'is-overdue' : ''} dateTime={firstOpenTask.dueAt}>{Date.parse(firstOpenTask.dueAt) < Date.now() ? 'Срок прошёл · ' : 'До '}{formatDate(firstOpenTask.dueAt)}</time>}</div>
+      <div className="activity-focus-actions"><button className="secondary" type="button" onClick={() => scrollToPanel(actionPanelRef.current)}>{firstOpenTask ? 'К задаче' : 'Назначить шаг'}</button><button className="primary" type="button" disabled={busy} onClick={() => { setShowOutcome(true); setFocusOutcome(true); }}>Записать результат</button></div>
+    </aside>}
     <div className="detail-grid">
       <div className="detail-main-column">
         {item.kind === 'corporate' && corporatePlan && <CorporatePlanCard key={item.id} value={corporatePlan} busy={busy} onSave={onCorporatePlan} onDirtyChange={onDirtyChange} />}
         {item.kind === 'university' && universitySteps && <UniversityStepsCard value={universitySteps} busy={busy} onSave={onUniversityStep} onCorrectionReturn={onCorrectionReturn} onDirtyChange={onDirtyChange} />}
-        <section className="panel action-panel"><div className="section-top"><div><div className="eyebrow">БЛИЖАЙШЕЕ ДЕЙСТВИЕ</div><h2>{firstOpenTask ? firstOpenTask.title : item.closed ? 'Активность закрыта' : 'Следующий шаг не задан'}</h2></div><span className="action-icon">↗</span></div>
+        <section ref={actionPanelRef} className="panel action-panel activity-focus-target"><div className="section-top"><div><div className="eyebrow">БЛИЖАЙШЕЕ ДЕЙСТВИЕ</div><h2>{firstOpenTask ? firstOpenTask.title : item.closed ? 'Активность закрыта' : 'Следующий шаг не задан'}</h2></div><span className="action-icon">↗</span></div>
           {firstOpenTask ? <div className="task-meta"><span>◷ {formatDate(firstOpenTask.dueAt)}</span><span>Ответственный: {firstOpenTask.ownerName ?? 'вы'}</span><button className="complete-button" disabled={busy || item.closed} onClick={() => onComplete(firstOpenTask.id)}>Отметить выполненным</button></div> : item.closed ? <p className="muted-copy">Список действий доступен только для просмотра.</p> : <p className="muted-copy">Добавьте задачу со сроком, чтобы следующее действие было видно в очереди.</p>}
           {firstOpenTask && <details className="task-update-disclosure" key={firstOpenTask.id}><summary>Обновления и подписка</summary><TaskUpdates api={api} activityId={item.id} taskId={firstOpenTask.id} readOnly={Boolean(item.closed)} onChanged={onRefresh} onDirtyChange={onDirtyChange} /></details>}
           {!item.closed && <form className="inline-task-form" onSubmit={async (event) => { event.preventDefault(); if (busy || item.closed || formSubmitLock.current) return; formSubmitLock.current = true; try { if (await onTask(taskTitle, moscowDateTimeToIso(taskDue))) { setTaskTitle(''); setTaskDue(initialTaskDue.current); } } finally { formSubmitLock.current = false; } }}><label className="field"><span>Новое действие</span><input disabled={busy} value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength={180} placeholder="Например, уточнить состав программы" required /></label><label className="field due-field"><span>Срок · МСК</span><input disabled={busy} type="datetime-local" value={taskDue} onChange={(event) => setTaskDue(event.target.value)} required /></label><button className="primary task-add" disabled={busy || item.closed}>Поставить действие</button></form>}
@@ -2762,14 +2779,14 @@ function ActivityDetail({ item, contacts, products, managerKams, canReassign, cu
           {guidance && !guidance.feedback?.active && <p className="transition-guidance">Подсказка: {guidance.tip.recommendation} <a href="#activity-guidance">Подробнее в инструкции ↓</a></p>}
         </section>
 
-        <section className="panel outcome-panel"><div className="section-top"><div><div className="eyebrow">КОНТАКТ</div><h2>Записать результат взаимодействия</h2></div><button className="text-button" disabled={busy || item.closed} onClick={() => setShowOutcome((show) => !show)}>{item.closed ? 'Только чтение' : showOutcome ? 'Свернуть' : 'Добавить итог'}</button></div>
-          {showOutcome && !item.closed && <form className="outcome-form" onSubmit={async (event) => { event.preventDefault(); if (busy || item.closed || formSubmitLock.current) return; formSubmitLock.current = true; try { if (await onOutcome(outcome, note)) { savedOutcome.current = { outcome, note: '' }; setNote(''); setShowOutcome(false); onDirtyChange('contact-outcome', false); } } finally { formSubmitLock.current = false; } }}><label className="field"><span>Результат</span><select disabled={busy} value={outcome} onChange={(event) => setOutcome(event.target.value)}>{OUTCOMES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="field"><span>{outcome === 'cancelled' || outcome === 'refused' ? 'Причина завершения' : 'Краткая заметка'}</span><textarea disabled={busy} required={outcome === 'cancelled' || outcome === 'refused'} value={note} onChange={(event) => setNote(event.target.value)} maxLength={3000} placeholder={outcome === 'cancelled' || outcome === 'refused' ? 'Укажите, кто и почему отменил запрос или отказался' : 'Что обсудили и о чём договорились?'} rows={3} /></label><div className="form-actions"><span>{outcome === 'cancelled' || outcome === 'refused' ? 'Причина сохранится в истории; после этого можно завершить активность.' : 'Запись попадёт в историю. Стадия не изменится.'}</span><button className="primary" disabled={busy || item.closed}>Сохранить результат</button></div></form>}
+        <section ref={outcomePanelRef} className="panel outcome-panel activity-focus-target"><div className="section-top"><div><div className="eyebrow">КОНТАКТ</div><h2>Записать результат взаимодействия</h2></div><button className="text-button" aria-expanded={showOutcome && !item.closed} aria-controls="activity-outcome-form" disabled={busy || item.closed} onClick={() => setShowOutcome((show) => !show)}>{item.closed ? 'Только чтение' : showOutcome ? 'Свернуть' : 'Добавить итог'}</button></div>
+          {showOutcome && !item.closed && <form id="activity-outcome-form" className="outcome-form" onSubmit={async (event) => { event.preventDefault(); if (busy || item.closed || formSubmitLock.current) return; formSubmitLock.current = true; try { if (await onOutcome(outcome, note)) { savedOutcome.current = { outcome, note: '' }; setNote(''); setShowOutcome(false); onDirtyChange('contact-outcome', false); } } finally { formSubmitLock.current = false; } }}><label className="field"><span>Результат</span><select disabled={busy} value={outcome} onChange={(event) => setOutcome(event.target.value)}>{OUTCOMES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="field"><span>{outcome === 'cancelled' || outcome === 'refused' ? 'Причина завершения' : 'Краткая заметка'}</span><textarea disabled={busy} required={outcome === 'cancelled' || outcome === 'refused'} value={note} onChange={(event) => setNote(event.target.value)} maxLength={3000} placeholder={outcome === 'cancelled' || outcome === 'refused' ? 'Укажите, кто и почему отменил запрос или отказался' : 'Что обсудили и о чём договорились?'} rows={3} /></label><div className="form-actions"><span>{outcome === 'cancelled' || outcome === 'refused' ? 'Причина сохранится в истории; после этого можно завершить активность.' : 'Запись попадёт в историю. Стадия не изменится.'}</span><button className="primary" disabled={busy || item.closed}>Сохранить результат</button></div></form>}
           {(item.closed || !showOutcome) && <p className="muted-copy">{item.closed ? 'Закрытая активность доступна только для просмотра.' : 'Результат контакта будет сохранён в истории отдельно от стадии активности.'}</p>}
         </section>
 
         <section className="panel history-panel"><div className="section-top"><div><div className="eyebrow">ЕДИНАЯ ЛЕНТА</div><h2>Все действия по активности</h2></div><span className="history-count">{visibleHistory.length}</span></div>
           {canReassign && historyAuthors.length > 1 && <label className="field activity-history-filter"><span>Автор действия</span><select value={historyAuthor} onChange={(event) => setHistoryAuthor(event.target.value)}><option value="">Все участники</option>{historyAuthors.map(([sub, name]) => <option key={sub} value={sub}>{name}</option>)}</select></label>}
-          {visibleHistory.length ? <><div className="timeline">{visibleHistory.slice(0, 3).map(renderTimelineEntry)}</div>{visibleHistory.length > 3 && <details className="history-more"><summary>Показать более ранние события · ещё {visibleHistory.length - 3}</summary><div className="timeline">{visibleHistory.slice(3).map(renderTimelineEntry)}</div></details>}</> : <p className="muted-copy">Событий по этому автору пока нет.</p>}
+          {visibleHistory.length ? <ActivityTimeline events={visibleHistory} label={outcomeLabel} /> : <p className="muted-copy">Событий по этому автору пока нет.</p>}
         </section>
 
         {item.origin === 'cms_mock' && <CmsExchangeCard jobs={exchangeJobs} busy={busy} onRetry={onRetryExchange} />}
