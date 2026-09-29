@@ -8,6 +8,7 @@ import { KamDashboard } from './kam-dashboard';
 import { ProgramCatalog, type LearningProgram } from './program-catalog';
 import { formatRussianCount, russianNounForm } from './russian-count';
 import { UserAvatar } from './user-avatar';
+import './kam-onboarding.css';
 
 type Kind = 'university' | 'individual' | 'corporate';
 type Segment = 'all' | 'university' | 'company' | 'individual';
@@ -315,6 +316,11 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
   const hasCrmWorkspaceAccess = hasQueueAccess || hasAdminAccess;
   const roleScope = ['manager', 'admin', 'kam'].filter((role) => roles.includes(role)).join('|');
   const importScope = `${user.sub ?? user.preferred_username ?? 'session'}:${['admin', 'manager', 'kam'].filter((role) => roles.includes(role)).join('|')}`;
+  const onboardingKey = `lct-kam-onboarding-v1:${user.sub ?? user.preferred_username ?? 'session'}`;
+  const [onboardingOpen, setOnboardingOpen] = useState(() => hasKamAccess && !localStorage.getItem(onboardingKey));
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const onboardingCloseRef = useRef<HTMLButtonElement>(null);
+  const onboardingTriggerRef = useRef<HTMLButtonElement>(null);
   const roleScopeRef = useRef(roleScope);
   const [activeView, setActiveView] = useState<'queue' | 'activities' | 'manager' | 'dashboard' | 'reports' | 'import' | 'exchange' | 'cms-intake' | 'workflow' | 'users' | 'handbook' | 'feed' | 'notifications'>(() => hasManagerAccess ? 'manager' : isTechnicalAdminOnly ? 'exchange' : 'queue');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -1025,6 +1031,43 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
   const mobileOverflowDestinations = mobileNavigationDestinations.filter((destination) => !mobilePrimaryIds.includes(destination.id));
   const activeMobileOverflow = !selected && mobileOverflowDestinations.find((destination) => destination.id === activeView);
 
+  const onboardingSteps = [
+    { title: 'Рабочая очередь', copy: 'Здесь собраны активности, требующие внимания. Фильтры помогают начать с просроченных и задач на сегодня.', action: 'Открыть очередь' },
+    { title: 'Карточка активности', copy: 'Откройте активность, чтобы увидеть контакт, историю, задачи и следующий шаг. Если очередь пуста, карточки появятся здесь позже.', action: list.length ? 'Открыть первую карточку' : 'Посмотреть очередь' },
+    { title: 'Задача и контакт', copy: 'В карточке проверьте контакт и запланируйте следующую задачу. Пока ничего не сохраняется автоматически.', action: list.length ? 'Перейти к карточке' : 'Посмотреть очередь' },
+    { title: 'Этапы и справочник', copy: 'Справочник объясняет этапы работы и допустимые переходы. Он доступен из навигации в любой момент.', action: 'Открыть справочник' },
+    { title: 'Уведомления', copy: 'Здесь появляются события, на которые стоит отреагировать. Значок в верхней панели показывает число непрочитанных.', action: 'Открыть уведомления' },
+  ];
+  function closeOnboarding() {
+    localStorage.setItem(onboardingKey, 'seen');
+    setOnboardingOpen(false);
+    window.requestAnimationFrame(() => onboardingTriggerRef.current?.focus());
+  }
+  function openOnboarding() { setOnboardingStep(0); setOnboardingOpen(true); }
+  function followOnboardingAction() {
+    const step = onboardingStep;
+    if (step === 0 || ((step === 1 || step === 2) && !list.length)) {
+      if (!goToSavedQueue()) return;
+    } else if (step === 1 || step === 2) {
+      void openActivity(list[0]);
+    } else if (!navigateToMobileView(step === 3 ? 'handbook' : 'notifications')) return;
+    closeOnboarding();
+  }
+  useEffect(() => {
+    if (!onboardingOpen) return;
+    onboardingCloseRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeOnboarding(); }
+      if (event.key !== 'Tab') return;
+      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.kam-onboarding button:not([disabled])'));
+      if (!buttons.length) return;
+      if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons[buttons.length - 1].focus(); }
+      else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) { event.preventDefault(); buttons[0].focus(); }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onboardingOpen, onboardingStep, onboardingKey]);
+
   return <div className={`app-shell ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`}>
     <aside className={`sidebar ${hasManagerAccess ? 'has-manager-nav' : ''} ${hasManagerAccess && hasAdminAccess ? 'is-manager-admin' : ''}`} aria-label="Основная навигация">
       <div className="brand" aria-label="Ростелеком · ИТ Школа CRM">
@@ -1099,12 +1142,23 @@ export function App({ token, user, logout }: { token: Token; user: User; logout:
       <header className="topbar">
         <div className="crumbs"><span>Рабочее пространство</span><i>/</i><b>{selected ? 'Активность' : activeView === 'activities' ? 'Все активности' : activeView === 'manager' ? 'Показатели команды' : activeView === 'dashboard' ? 'Показатели' : activeView === 'feed' ? hasManagerAccess ? 'Движение команды' : 'Мои действия' : activeView === 'notifications' ? 'Уведомления' : activeView === 'reports' ? 'Отчёты' : activeView === 'import' ? 'Импорт и каталоги' : activeView === 'exchange' ? 'Состояние системы' : activeView === 'workflow' ? 'Схема вузов' : activeView === 'users' ? 'Пользователи' : activeView === 'cms-intake' ? 'Входящие с сайта' : activeView === 'handbook' ? 'Справочник этапов' : 'Рабочая очередь'}</b></div>
         <div className="topbar-right">
+          {hasKamAccess && <button ref={onboardingTriggerRef} type="button" className="kam-onboarding-trigger" onClick={openOnboarding} aria-haspopup="dialog">Как работать</button>}
           {hasQueueAccess && <button type="button" className={`topbar-notifications${!selected && activeView === 'notifications' ? ' active' : ''}`} aria-label={`Уведомления${unreadNotifications ? `, непрочитанных: ${unreadNotifications}` : ''}`} aria-current={!selected && activeView === 'notifications' ? 'page' : undefined} title="Уведомления" onClick={() => navigateToMobileView('notifications')}><span className="topbar-notifications-icon"><NavigationIcon name="notifications" /></span>{unreadNotifications > 0 && <span className="topbar-notifications-count">{unreadNotifications}</span>}</button>}
           <button type="button" className="theme-toggle" aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'} title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'} onClick={() => setTheme((value) => value === 'light' ? 'dark' : 'light')}>{theme === 'light' ? '☾' : '☀'}</button>
           <UserAvatar name={userLabel} className="user-avatar" /><span className="user-name">{userLabel}</span>
           <button className="logout" onClick={() => { if (confirmDetailExit()) { clearStoredImportDraft(); logout(); } }}>Выйти</button>
         </div>
       </header>
+
+      {onboardingOpen && hasKamAccess && <div className="kam-onboarding-backdrop">
+        <section className="kam-onboarding" role="dialog" aria-modal="true" aria-labelledby="kam-onboarding-title" aria-describedby="kam-onboarding-copy">
+          <div className="kam-onboarding-heading"><span>Краткий гид · {onboardingStep + 1} из {onboardingSteps.length}</span><button ref={onboardingCloseRef} type="button" className="kam-onboarding-close" onClick={closeOnboarding} aria-label="Закрыть гид">×</button></div>
+          <div className="kam-onboarding-progress" aria-hidden="true">{onboardingSteps.map((_, index) => <span key={index} className={index <= onboardingStep ? 'is-current' : ''} />)}</div>
+          <h2 id="kam-onboarding-title">{onboardingSteps[onboardingStep].title}</h2>
+          <p id="kam-onboarding-copy">{onboardingSteps[onboardingStep].copy}</p>
+          <div className="kam-onboarding-actions"><button type="button" className="kam-onboarding-link" onClick={followOnboardingAction}>{onboardingSteps[onboardingStep].action}</button><div><button type="button" disabled={onboardingStep === 0} onClick={() => setOnboardingStep((step) => step - 1)}>Назад</button><button type="button" className="kam-onboarding-next" onClick={() => onboardingStep === onboardingSteps.length - 1 ? closeOnboarding() : setOnboardingStep((step) => step + 1)}>{onboardingStep === onboardingSteps.length - 1 ? 'Готово' : 'Далее'}</button></div></div>
+        </section>
+      </div>}
 
       <div className="page-scroll" onScroll={selected ? undefined : handleScroll}>
         {error && <div className="alert error"><span>!</span>{error}<button onClick={() => setError('')}>Закрыть</button></div>}
