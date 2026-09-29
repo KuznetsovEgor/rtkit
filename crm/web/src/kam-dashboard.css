@@ -1,0 +1,96 @@
+.kam-dashboard {
+  width: 100%;
+  max-width: 1200px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.kam-dashboard-heading {
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.kam-dashboard-heading > div { min-width: 0; }
+.kam-dashboard-heading h1 { color: var(--crm-ink); }
+.kam-dashboard-heading p { color: var(--crm-muted); font-size: 13px; line-height: 1.5; }
+
+.kam-dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.kam-dashboard-metric {
+  min-width: 0;
+  min-height: 142px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 17px 18px;
+  border: 1px solid var(--crm-border);
+  border-radius: 10px;
+  color: var(--crm-ink);
+  background: var(--crm-surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
+}
+
+.kam-dashboard-metric:hover {
+  border-color: var(--crm-accent);
+  background: var(--crm-page);
+  transform: translateY(-1px);
+}
+
+.kam-dashboard-metric:focus-visible {
+  outline: 3px solid var(--crm-accent);
+  outline-offset: 2px;
+}
+
+.kam-dashboard-metric-label {
+  color: var(--crm-ink);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.kam-dashboard-metric strong {
+  color: var(--crm-ink);
+  font-size: clamp(30px, 3vw, 38px);
+  font-weight: 750;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.kam-dashboard-metric-hint {
+  color: var(--crm-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.kam-dashboard-metric.metric-overdue strong { color: var(--crm-danger); }
+.kam-dashboard-metric.metric-awaiting_reply strong { color: var(--crm-accent-text); }
+
+@media (max-width: 900px) {
+  .kam-dashboard-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kam-dashboard-metric { min-height: 124px; padding: 14px; }
+}
+
+@media (max-width: 420px) {
+  .kam-dashboard-heading { gap: 8px; }
+  .kam-dashboard-heading .secondary { flex: 0 0 auto; min-height: 40px; padding: 0 10px; }
+  .kam-dashboard-heading p { max-width: 240px; font-size: 12px; }
+  .kam-dashboard-metrics { gap: 8px; }
+  .kam-dashboard-metric { min-height: 118px; gap: 4px; padding: 12px 10px; }
+  .kam-dashboard-metric-label { font-size: 12px; }
+  .kam-dashboard-metric strong { font-size: 30px; }
+  .kam-dashboard-metric-hint { font-size: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kam-dashboard-metric { transition: none; }
+}

@@ -1,0 +1,46 @@
+{
+  "realm": "lct",
+  "enabled": true,
+  "displayName": "РТК CRM",
+  "displayNameHtml": "РТК CRM",
+  "loginTheme": "rtk-crm",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["ru"],
+  "defaultLocale": "ru",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "kam", "description": "Клиентский менеджер с доступом к назначенным активностям" },
+      { "name": "manager", "description": "Руководитель с доступом к портфелю CRM" },
+      { "name": "admin", "description": "Администратор локального стенда" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "lct-web",
+      "name": "RTK CRM local web",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [
+        {
+          "name": "audience lct-web",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.client.audience": "lct-web", "id.token.claim": "false", "access.token.claim": "true" }
+        }
+      ]
+    }
+  ],
+  "users": []
+}

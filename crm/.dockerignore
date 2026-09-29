@@ -1,0 +1,16 @@
+.git
+.agent
+.local-storage
+deploy/public-demo/.private-demo-credentials
+.env
+.env.*
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/.mock-state
+**/.mock-state.*
+**/.DS_Store
+delivery
+*.zip
+*.pdf

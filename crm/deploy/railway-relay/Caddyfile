@@ -1,0 +1,55 @@
+{
+	admin off
+}
+
+:8080 {
+	@health {
+		path /_relay/health
+	}
+	handle @health {
+		respond "relay-ok" 200
+	}
+
+	@web {
+		host crm.futura.team
+	}
+	handle @web {
+		reverse_proxy https://138.16.162.126 {
+			transport http {
+				tls_server_name crm.futura.team
+			}
+			header_up Host crm.futura.team
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	@api {
+		host api.crm.futura.team
+	}
+	handle @api {
+		reverse_proxy https://138.16.162.126 {
+			transport http {
+				tls_server_name api.crm.futura.team
+			}
+			header_up Host api.crm.futura.team
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	@auth {
+		host auth.crm.futura.team
+	}
+	handle @auth {
+		reverse_proxy https://138.16.162.126 {
+			transport http {
+				tls_server_name auth.crm.futura.team
+			}
+			header_up Host auth.crm.futura.team
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	handle {
+		respond "Unknown host" 404
+	}
+}

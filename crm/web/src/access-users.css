@@ -1,0 +1,92 @@
+.access-users-page { max-width: 1200px; margin: 0 auto; }
+.access-users-heading { max-width: none; }
+.access-users-heading .secondary { white-space: nowrap; }
+.access-users-heading .secondary span { font-size: 11px; }
+.access-users-panel { padding: 0; overflow: hidden; }
+.access-users-panel > .section-top { padding: 19px 20px 16px; border-bottom: 1px solid #f0eef2; }
+.access-users-count { padding: 5px 9px; border-radius: 20px; color: #706b79; background: #f4f2f6; font-size: 10px; white-space: nowrap; }
+.access-users-list { display: flex; flex-direction: column; }
+.access-user-card { padding: 18px 20px; border-bottom: 1px solid #f0eef2; }
+.access-user-card:last-child { border-bottom: 0; }
+.access-user-card.is-disabled { background: #fcfbfd; }
+.access-user-main { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.access-user-identity { min-width: 0; display: flex; align-items: center; gap: 12px; }
+.access-user-avatar { width: 38px; height: 38px; border-radius: 50%; font-size: 14px; }
+.access-user-name { min-width: 0; }
+.access-user-name h3 { margin: 0 0 4px; color: #393544; font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+.access-user-name code { display: block; color: #96919d; font-family: inherit; font-size: 10px; overflow-wrap: anywhere; }
+.access-user-status { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+.access-user-status i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.access-user-status.enabled { color: #42785e; background: #edf7f0; }
+.access-user-status.disabled { color: #9b5860; background: #fbefef; }
+.access-user-meta { display: grid; grid-template-columns: minmax(180px, 1.15fr) minmax(0, 1fr); align-items: start; gap: 18px; margin: 17px 0 0 50px; }
+.access-user-meta-label, .access-user-dates dt { display: block; margin-bottom: 7px; color: #96919d; font-size: 9px; }
+.access-user-role-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.access-user-role { display: inline-flex; padding: 5px 8px; border-radius: 5px; color: #1749ac; background: #ecf3ff; font-size: 9px; }
+.access-user-no-role { color: #9a96a0; font-size: 10px; }
+.access-user-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.access-user-dates dt { margin-bottom: 4px; }
+.access-user-dates dd { margin: 0; color: #5b5663; font-size: 10px; }
+.access-user-reason { margin: 13px 0 0 50px; color: #78727f; font-size: 10px; line-height: 1.55; overflow-wrap: anywhere; }
+.access-user-scope { display: flex; align-items: center; gap: 10px; margin: 13px 0 0 50px; color: #263c6b; font-size: 11px; }
+.access-user-scope .access-user-meta-label { margin: 0; }
+.access-user-scope b { font-weight: 600; }
+.access-scope-options { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.access-scope-options label { display: inline-flex; align-items: center; gap: 6px; color: #454252; font-size: 11px; }
+.access-scope-options input { accent-color: #0055ff; }
+.access-user-reason b { color: #5b5663; font-weight: 600; }
+.access-user-reason span { color: #98939e; }
+.access-user-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin: 14px 0 0 50px; }
+.access-user-disable, .access-user-enable { min-height: 34px; padding: 0 12px; border: 1px solid transparent; border-radius: 6px; font: inherit; font-size: 10px; font-weight: 600; transition: .15s ease; }
+.access-user-disable { color: #994b54; border-color: #eed5d7; background: #fff8f8; }
+.access-user-disable:hover:not(:disabled) { border-color: #dfb8bc; background: #fff0f1; }
+.access-user-enable { color: #42785e; border-color: #d7e9dd; background: #f7fbf8; }
+.access-user-enable:hover:not(:disabled) { border-color: #b8d7c2; background: #eef8f1; }
+.access-user-disable:focus-visible, .access-user-enable:focus-visible, .access-user-confirm-check input:focus-visible, .access-users-field textarea:focus-visible { outline: 3px solid #0055ff44; outline-offset: 2px; }
+.access-user-confirm { width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid #d9e6ff; border-radius: 8px; background: #f8fbff; }
+.access-user-confirm-copy b { color: #263c6b; font-size: 11px; }
+.access-user-confirm-copy p { margin: 5px 0 0; color: #77717f; font-size: 10px; line-height: 1.55; }
+.access-users-field { display: flex; flex-direction: column; gap: 6px; color: #6c6875; font-size: 10px; }
+.access-users-field > span { font-weight: 600; }
+.access-users-field small { margin-left: 5px; color: #a34f58; font-size: 9px; font-weight: 400; }
+.access-users-field textarea { width: 100%; min-height: 58px; padding: 8px 10px; border: 1px solid #dedbe4; border-radius: 6px; color: #35313f; background: #fff; font: inherit; font-size: 10px; line-height: 1.45; resize: vertical; }
+.access-users-field textarea:focus { border-color: #0055ff; box-shadow: 0 0 0 3px #0055ff1b; outline: 0; }
+.access-user-confirm-check { display: flex; align-items: flex-start; gap: 8px; color: #625c69; font-size: 10px; line-height: 1.45; cursor: pointer; }
+.access-user-confirm-check input { flex: 0 0 auto; width: 14px; height: 14px; margin: 0; accent-color: #0055ff; }
+.access-user-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.access-user-confirm-actions .secondary { min-height: 34px; font-size: 10px; }
+.access-user-confirm-actions button { white-space: nowrap; }
+.access-users-alert { max-width: 1200px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 auto 14px; padding: 11px 13px; border: 1px solid #f0c8cb; border-radius: 7px; color: #8d3e48; background: #fff7f7; font-size: 10px; }
+.access-users-alert > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.access-users-alert > div span { overflow-wrap: anywhere; }
+.access-users-alert .secondary { flex: 0 0 auto; min-height: 30px; font-size: 10px; }
+.access-users-alert .text-button { flex: 0 0 auto; }
+.access-users-state { min-height: 120px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 20px; color: #85818d; font-size: 11px; }
+.access-users-spinner { width: 16px; height: 16px; border: 2px solid #dbe8ff; border-top-color: #0055ff; border-radius: 50%; animation: access-users-spin .8s linear infinite; }
+@keyframes access-users-spin { to { transform: rotate(360deg); } }
+.access-users-empty { min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px 16px; text-align: center; }
+.access-users-empty > span { width: 40px; height: 40px; display: grid; place-items: center; margin-bottom: 11px; border-radius: 50%; color: #0055ff; background: #eaf1ff; font-size: 20px; }
+.access-users-empty b { color: #393544; font-size: 12px; }
+.access-users-empty p { margin: 5px 0 0; color: #85818d; font-size: 10px; }
+@media (max-width: 620px) {
+  .access-users-heading { align-items: flex-start; flex-direction: column; gap: 14px; }
+  .access-users-heading .secondary { align-self: flex-start; }
+  .access-users-panel > .section-top { padding: 16px 14px 13px; }
+  .access-user-card { padding: 15px 14px; }
+  .access-user-main { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .access-user-status { margin-left: 50px; }
+  .access-user-meta { grid-template-columns: 1fr; gap: 13px; margin: 14px 0 0; }
+  .access-user-dates { gap: 8px; }
+  .access-user-reason, .access-user-scope, .access-user-actions { margin-left: 0; }
+  .access-user-scope { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .access-user-actions { justify-content: stretch; }
+  .access-user-actions > button { width: 100%; }
+  .access-user-confirm { padding: 12px; }
+  .access-user-confirm-actions { flex-direction: column-reverse; }
+  .access-user-confirm-actions button { width: 100%; }
+  .access-users-alert { align-items: flex-start; flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .access-users-spinner { animation: none; }
+  .access-user-disable, .access-user-enable { transition: none; }
+}

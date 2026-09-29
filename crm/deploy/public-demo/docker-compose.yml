@@ -1,0 +1,171 @@
+name: lct-crm-public-demo
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../infra/postgres-init.sql:/docker-entrypoint-initdb.d/10-keycloak-db.sql:ro
+    networks: [private]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  keycloak:
+    build:
+      context: ../..
+      dockerfile: deploy/public-demo/Dockerfile.keycloak
+      args:
+        WEB_ORIGIN: ${WEB_ORIGIN:?set WEB_ORIGIN}
+        KEYCLOAK_PUBLIC_ORIGIN: ${KEYCLOAK_PUBLIC_ORIGIN:?set KEYCLOAK_PUBLIC_ORIGIN}
+    restart: unless-stopped
+    command: ["start", "--import-realm", "--proxy-headers=xforwarded"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:?set KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?set KC_BOOTSTRAP_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:?set POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_ORIGIN:?set KEYCLOAK_PUBLIC_ORIGIN}
+      KC_HOSTNAME_STRICT: "true"
+      KC_PROXY_HEADERS: xforwarded
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [private, edge]
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200' <&3"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/public-demo/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: "3001"
+      TRUST_PROXY: "1"
+      PUBLIC_DEMO_INTAKE_ENABLED: "1"
+      WEB_ORIGIN: ${WEB_ORIGIN:?set WEB_ORIGIN}
+      DATABASE_URL: postgresql://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
+      OIDC_ISSUER: ${KEYCLOAK_PUBLIC_ORIGIN:?set KEYCLOAK_PUBLIC_ORIGIN}/realms/lct
+      OIDC_JWKS_URL: http://keycloak:8080/realms/lct/protocol/openid-connect/certs
+      OIDC_CLIENT_ID: lct-web
+      CRM_EXCHANGE_CMS_URL: http://127.0.0.1:3101
+      CRM_EXCHANGE_LMS_URL: http://127.0.0.1:3102
+      CMS_MOCK_HOST: 127.0.0.1
+      LMS_MOCK_HOST: 127.0.0.1
+      CRM_MOCK_STATE_DIR: /data/mock-state
+      CRM_DOCUMENT_STORAGE: /data/documents
+      CRM_IMPORT_STORAGE: /data/imports
+      CRM_REPORT_STORAGE: /data/reports
+    volumes:
+      - app_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks: [private, edge]
+    healthcheck:
+      test: ["CMD", "node", "-e", "Promise.all(['3001/health','3101/health','3102/health'].map(async p => { const r=await fetch('http://127.0.0.1:'+p); if(!r.ok) process.exitCode=1 })).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  demo-provisioner:
+    profiles: [provision]
+    build:
+      context: ../..
+      dockerfile: deploy/public-demo/Dockerfile.api
+    entrypoint: ["node", "/app/scripts/provision-public-demo-accounts.mjs"]
+    user: "${DEMO_UID:-1000}:${DEMO_GID:-1000}"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
+      KEYCLOAK_URL: http://keycloak:8080
+      KC_ADMIN_USER: ${KC_BOOTSTRAP_ADMIN_USERNAME:?set KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?set KC_BOOTSTRAP_ADMIN_PASSWORD}
+      DEMO_CREDENTIALS_FILE: /credentials/demo-accounts.txt
+    volumes:
+      - ./.private-demo-credentials:/credentials
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks: [private]
+    restart: "no"
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/public-demo/Dockerfile.web
+      args:
+        WEB_ORIGIN: ${WEB_ORIGIN:?set WEB_ORIGIN}
+        VITE_API_URL: ${API_PUBLIC_ORIGIN:?set API_PUBLIC_ORIGIN}
+        VITE_KEYCLOAK_URL: ${KEYCLOAK_PUBLIC_ORIGIN:?set KEYCLOAK_PUBLIC_ORIGIN}
+        KEYCLOAK_PUBLIC_ORIGIN: ${KEYCLOAK_PUBLIC_ORIGIN:?set KEYCLOAK_PUBLIC_ORIGIN}
+    restart: unless-stopped
+    networks: [edge]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      WEB_HOST: ${WEB_HOST:?set WEB_HOST}
+      API_HOST: ${API_HOST:?set API_HOST}
+      AUTH_HOST: ${AUTH_HOST:?set AUTH_HOST}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks: [edge]
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  private:
+    internal: true
+  edge:
+
+volumes:
+  postgres_data:
+  app_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,19 @@
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY api ./api
+COPY web ./web
+COPY index.html ./index.html
+COPY scripts ./scripts
+ARG WEB_ORIGIN
+ARG VITE_API_URL
+ARG VITE_KEYCLOAK_URL
+ARG KEYCLOAK_PUBLIC_ORIGIN
+ENV WEB_ORIGIN=$WEB_ORIGIN VITE_API_URL=$VITE_API_URL VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL KEYCLOAK_PUBLIC_ORIGIN=$KEYCLOAK_PUBLIC_ORIGIN CRM_DEMO_MODE=1
+RUN npm run build:public
+
+FROM nginx:1.27-alpine
+COPY deploy/public-demo/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 8080

@@ -1,0 +1,46 @@
+{
+  "name": "lct-crm-b01",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n api,cms,lms,web -c blue,green,yellow,magenta \"npm:dev:api\" \"npm:dev:cms\" \"npm:dev:lms\" \"npm:dev:web\"",
+    "dev:demo": "concurrently -k -n api,cms,lms,web -c blue,green,yellow,magenta \"npm:dev:api\" \"npm:dev:cms\" \"npm:dev:lms\" \"npm:dev:web:demo\"",
+    "dev:api": "tsx watch api/src/main.ts",
+    "dev:cms": "tsx watch api/src/mock-cms.ts",
+    "dev:lms": "tsx watch api/src/mock-lms.ts",
+    "dev:web": "vite --config web/vite.config.ts --host 0.0.0.0",
+    "dev:web:demo": "vite --config web/vite.config.ts --host 127.0.0.1",
+    "build": "tsc -p api/tsconfig.json && vite build --config web/vite.config.ts",
+    "build:public": "node scripts/check-public-build.mjs && npm run build && node scripts/write-public-intake-config.mjs dist/request/config.js && node scripts/check-public-artifact.mjs",
+    "db:migrate": "tsx api/src/db/migrate.ts",
+    "test": "NODE_ENV=test tsx --test api/test/*.test.ts",
+    "test:db": "./scripts/test-db.sh",
+    "start:api": "node api/dist/main.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "drizzle-orm": "^0.45.3",
+    "fastify": "^5.6.0",
+    "jose": "^6.1.0",
+    "keycloak-js": "^26.2.0",
+    "pdfkit": "^0.20.2",
+    "pg": "^8.16.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "sharp": "^0.35.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "@types/pdfkit": "^0.17.6",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}

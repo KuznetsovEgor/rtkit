@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f3ef">
+  <meta name="description" content="Форма заявки в РТК ИТ Школу.">
+  <title>Заявка · РТК ИТ Школа</title>
+  <link rel="stylesheet" href="/request/request.css">
+</head>
+<body>
+  <a class="skip-link" href="#inquiry-form">Перейти к форме</a>
+  <main class="intake-screen">
+    <div class="mascot-frame"><img src="/request/cat-mascot-rtk-it-fur-logo.png" alt="Котик с фиолетово-оранжевым знаком ИТ-школы из шерсти на груди"></div>
+    <section class="intake-content" aria-labelledby="page-title">
+      <p class="eyebrow">РТК ИТ ШКОЛА</p>
+      <h1 id="page-title"><span>Доброго дня, уважаемые</span><span>судьи и эксперты</span></h1>
+      <p class="intro">Выберите тип заявки и заполните короткую форму.</p>
+
+      <div class="form-tabs" role="group" aria-label="Тип заявки">
+        <button type="button" class="form-tab is-active" aria-pressed="true" data-tab-kind="university">Заявка вуза</button>
+        <button type="button" class="form-tab" aria-pressed="false" data-tab-kind="corporate">B2B</button>
+        <button type="button" class="form-tab" aria-pressed="false" data-tab-kind="individual">Физлицо</button>
+      </div>
+
+      <form id="inquiry-form" novalidate>
+        <input type="hidden" name="kind" value="university">
+        <div class="form-grid">
+          <label class="field field-wide"><span class="field-label">Как к вам обращаться&nbsp;<span class="required-mark" aria-hidden="true">*</span></span>
+            <input name="name" required minlength="2" maxlength="120" autocomplete="name" placeholder="Например, Алексей Иванов">
+          </label>
+          <label class="field"><span class="field-label">Почта для ответа&nbsp;<span class="required-mark" aria-hidden="true">*</span></span>
+            <input name="email" type="email" required maxlength="254" autocomplete="email" placeholder="name@example.com">
+          </label>
+          <label class="field"><span class="field-label">Телефон <span class="optional">необязательно</span></span>
+            <input name="phone" type="tel" maxlength="40" autocomplete="tel" placeholder="+7 000 000-00-00">
+          </label>
+          <label class="field field-wide organization-field"><span class="field-label">Название вуза&nbsp;<span class="required-mark" aria-hidden="true">*</span></span>
+            <input name="organization" required minlength="2" maxlength="160" placeholder="Например, Учебный университет">
+          </label>
+          <label class="field field-wide"><span class="field-label">Коротко о запросе&nbsp;<span class="required-mark" aria-hidden="true">*</span></span>
+            <textarea name="note" required minlength="8" maxlength="1200" rows="3" placeholder="Например, хотим обсудить практическую программу для студентов"></textarea>
+          </label>
+        </div>
+        <label class="trap" aria-hidden="true" tabindex="-1">Оставьте поле пустым<input name="website" tabindex="-1" autocomplete="off"></label>
+        <p class="form-error" id="form-error" role="alert" aria-live="polite"></p>
+        <div class="submit-row">
+          <button class="submit-button" id="submit-button" type="submit">Отправить заявку <span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+      <div class="success-card" id="success-card" tabindex="-1" hidden>
+        <span class="success-icon" aria-hidden="true">✓</span>
+        <div><h2>Заявка создана</h2><p id="success-copy">Заявка попала в CRM.</p><button type="button" class="text-button" id="another-request">Создать ещё одну</button></div>
+      </div>
+      <p class="crm-note">Заполненная заявка попадёт прямо в CRM.</p>
+    </section>
+  </main>
+  <script src="/request/config.js"></script>
+  <script src="/request/request.js" defer></script>
+</body>
+</html>

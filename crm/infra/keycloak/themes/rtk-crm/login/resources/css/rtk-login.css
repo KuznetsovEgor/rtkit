@@ -1,0 +1,366 @@
+@font-face {
+  font-family: Manrope;
+  src: url('../fonts/manrope-cyrillic.woff2') format('woff2');
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0400-052F, U+2116;
+}
+
+@font-face {
+  font-family: Manrope;
+  src: url('../fonts/manrope-latin.woff2') format('woff2');
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --rtk-ink: #19171f;
+  --rtk-purple: #6800e8;
+  --rtk-purple-hover: #5600c4;
+  --rtk-orange: #ff501d;
+  --rtk-muted: #65616f;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body#keycloak-bg {
+  margin: 0;
+  background: #17151d;
+  color: var(--rtk-ink);
+  font-family: Manrope, Arial, sans-serif;
+}
+
+.pf-v5-c-login {
+  min-height: 100vh;
+  min-height: 100svh;
+  background: none;
+}
+
+.pf-v5-c-login__container {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(390px, .92fr);
+  grid-template-areas: 'header main';
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 0;
+}
+
+#kc-header {
+  grid-area: header;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  overflow: hidden;
+  min-height: 100%;
+  margin: 0;
+  padding: clamp(34px, 5vw, 86px);
+  background:
+    radial-gradient(circle at 94% 92%, rgba(255, 80, 29, .94) 0 13%, transparent 13.2%),
+    radial-gradient(circle at 76% 20%, rgba(122, 28, 255, .52), transparent 39%),
+    linear-gradient(135deg, #17151d 7%, #211632 60%, #421394 100%);
+  color: white;
+}
+
+#kc-header::before {
+  content: 'РОСТЕЛЕКОМ  /  ИТ ШКОЛА';
+  position: absolute;
+  z-index: 2;
+  top: clamp(34px, 5vw, 86px);
+  left: clamp(34px, 5vw, 86px);
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 800;
+  letter-spacing: .11em;
+  color: #fff;
+}
+
+#kc-header::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: -26vw;
+  right: -18vw;
+  width: 68vw;
+  height: 68vw;
+  min-width: 720px;
+  min-height: 720px;
+  border: 1px solid rgba(255, 255, 255, .38);
+  border-radius: 50%;
+  box-shadow: 0 0 0 9vw rgba(255, 255, 255, .035), 0 0 0 18vw rgba(255, 255, 255, .025);
+  transform: rotate(-17deg);
+  pointer-events: none;
+}
+
+#kc-header-wrapper {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 660px);
+  margin: 0;
+  color: #fff !important;
+  font-family: Manrope, Arial, sans-serif;
+  font-size: clamp(54px, 7.1vw, 118px);
+  font-weight: 800;
+  letter-spacing: -.075em;
+  line-height: .99;
+  text-align: left;
+  text-transform: none;
+}
+
+#kc-header-wrapper::before {
+  content: 'Единое пространство для работы';
+  display: block;
+  width: fit-content;
+  margin-bottom: 25px;
+  padding: 9px 13px;
+  border: 1px solid rgba(255, 255, 255, .42);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, .92);
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 600;
+  letter-spacing: .01em;
+  line-height: 1.3;
+}
+
+#kc-header-wrapper::after {
+  content: 'Партнёрства с вузами · индивидуальное и корпоративное обучение';
+  display: block;
+  max-width: 460px;
+  margin-top: clamp(28px, 4vw, 58px);
+  color: rgba(255, 255, 255, .78);
+  font-size: clamp(15px, 1.35vw, 19px);
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+.pf-v5-c-login__main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  margin: 0;
+  padding: 48px clamp(32px, 7vw, 112px);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fcfbfe;
+}
+
+.pf-v5-c-login__main-header,
+.pf-v5-c-login__main-body,
+.pf-v5-c-login__main-footer {
+  width: min(100%, 440px);
+  margin-inline: auto;
+}
+
+.pf-v5-c-login__main-header {
+  padding: 0 0 25px;
+  border-top: 0;
+}
+
+.pf-v5-c-login__main-header::before {
+  content: 'ДЕМО · РАБОЧЕЕ ПРОСТРАНСТВО';
+  display: block;
+  margin-bottom: 19px;
+  color: var(--rtk-purple);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+#kc-page-title {
+  color: var(--rtk-ink);
+  font-family: Manrope, Arial, sans-serif;
+  font-size: clamp(28px, 3vw, 39px);
+  font-weight: 800;
+  letter-spacing: -.045em;
+  line-height: 1.15;
+}
+
+.pf-v5-c-login__main-body {
+  padding: 0;
+}
+
+.pf-v5-c-form__label-text,
+.pf-v5-c-check__label {
+  color: #393541;
+  font-family: Manrope, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pf-v5-c-form-control {
+  min-height: 48px;
+  border: 1px solid #cbc7d2;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.pf-v5-c-form-control:hover {
+  border-color: #8a72b2;
+}
+
+.pf-v5-c-form-control:has([aria-invalid='true']) {
+  border-color: #c62e31;
+}
+
+.pf-v5-c-helper-text__item.pf-m-error,
+.kc-feedback-text.pf-m-error {
+  color: #ad1e25;
+  font-family: Manrope, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pf-v5-c-form-control:focus-within,
+.pf-v5-c-button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid #a779ff;
+  outline-offset: 3px;
+}
+
+.pf-v5-c-form-control input {
+  min-height: 46px;
+  color: var(--rtk-ink);
+  font-family: Manrope, Arial, sans-serif;
+  font-size: 15px;
+}
+
+.pf-v5-c-button {
+  min-height: 46px;
+  border-radius: 10px;
+  font-family: Manrope, Arial, sans-serif;
+  font-weight: 700;
+}
+
+.pf-v5-c-button.pf-m-primary {
+  border-color: var(--rtk-purple);
+  background: var(--rtk-purple);
+  color: #fff;
+}
+
+.pf-v5-c-button.pf-m-primary:hover {
+  border-color: var(--rtk-purple-hover);
+  background: var(--rtk-purple-hover);
+}
+
+.pf-v5-c-button.pf-m-secondary {
+  border-color: #c6b7e4;
+  background: #fff;
+  color: var(--rtk-purple);
+}
+
+a,
+.pf-v5-c-button.pf-m-link {
+  color: #5600bd;
+}
+
+.pf-v5-c-login__main-footer-band {
+  background: #f4effd;
+  border-radius: 10px;
+}
+
+.pf-v5-c-alert.pf-m-danger {
+  border-left: 4px solid #d73832;
+}
+
+@media (max-width: 900px) {
+  .pf-v5-c-login__container {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'header' 'main';
+    grid-template-rows: minmax(220px, auto) 1fr;
+  }
+
+  #kc-header {
+    min-height: 220px;
+    padding: 68px 32px 28px;
+  }
+
+  #kc-header::before {
+    top: 26px;
+    left: 32px;
+  }
+
+  #kc-header::after {
+    top: -470px;
+    right: -260px;
+    width: 650px;
+    height: 650px;
+  }
+
+  #kc-header-wrapper {
+    font-size: clamp(42px, 8vw, 64px);
+  }
+
+  #kc-header-wrapper::before {
+    margin-bottom: 15px;
+  }
+
+  #kc-header-wrapper::after {
+    display: none;
+  }
+
+  .pf-v5-c-login__main {
+    padding: 50px 24px 64px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pf-v5-c-login__container {
+    grid-template-rows: minmax(188px, auto) 1fr;
+  }
+
+  #kc-header {
+    min-height: 188px;
+    padding: 66px 22px 23px;
+  }
+
+  #kc-header::before {
+    left: 22px;
+    font-size: 10px;
+  }
+
+  #kc-header-wrapper {
+    font-size: clamp(38px, 10vw, 54px);
+  }
+
+  #kc-header-wrapper::before {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  .pf-v5-c-login__main {
+    justify-content: flex-start;
+    padding: 38px 22px 60px;
+  }
+
+  .pf-v5-c-login__main-header {
+    padding-bottom: 19px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pf-v5-c-button.pf-m-primary {
+    transition: background-color .15s ease, transform .15s ease;
+  }
+
+  .pf-v5-c-button.pf-m-primary:hover {
+    transform: translateY(-1px);
+  }
+}

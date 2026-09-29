@@ -1,0 +1,10 @@
+api/.mock-state/
+api/.mock-state.*
+/.local-storage/
+/deploy/public-demo/.private-demo-credentials/
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+.DS_Store

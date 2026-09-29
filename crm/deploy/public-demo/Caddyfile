@@ -1,0 +1,11 @@
+{$WEB_HOST} {
+	reverse_proxy web:8080
+}
+
+{$API_HOST} {
+	reverse_proxy api:3001
+}
+
+{$AUTH_HOST} {
+	reverse_proxy keycloak:8080
+}

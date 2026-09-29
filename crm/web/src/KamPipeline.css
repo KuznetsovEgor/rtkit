@@ -1,0 +1,47 @@
+.kam-pipeline { min-width: 0; margin-top: 14px; }
+.kam-pipeline-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.kam-pipeline-heading h2 { margin: 4px 0 0; color: var(--crm-ink); font-size: 18px; line-height: 1.3; }
+.kam-pipeline-heading p { margin: 5px 0 0; color: var(--crm-muted); font-size: 12px; line-height: 1.5; }
+.kam-pipeline-lanes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.kam-pipeline-lane { min-width: 0; padding: 13px; border: 1px solid var(--crm-border-control); border-radius: 9px; background: var(--crm-page); }
+.kam-pipeline-lane-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--crm-border-control); }
+.kam-pipeline-lane-heading h3 { margin: 0; color: var(--crm-ink); font-size: 13px; line-height: 1.4; }
+.kam-pipeline-lane-heading span { display: block; margin-top: 2px; color: var(--crm-muted); font-size: 11px; }
+.kam-pipeline-lane-heading strong { flex: 0 0 auto; min-width: 28px; color: var(--crm-ink); font-size: 16px; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.kam-pipeline-activities { display: grid; gap: 8px; padding-top: 10px; }
+.kam-pipeline-activity { display: grid; min-width: 0; gap: 6px; padding: 10px; border: 1px solid var(--crm-border-control); border-radius: 7px; color: var(--crm-ink); background: var(--crm-surface); text-align: left; }
+.kam-pipeline-activity-title { overflow: hidden; color: var(--crm-ink); font-size: 13px; font-weight: 650; line-height: 1.4; text-overflow: ellipsis; }
+.kam-pipeline-identity { overflow: hidden; margin-top: -4px; color: var(--crm-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.kam-pipeline-route { display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); align-items: center; gap: 6px; padding: 8px; border-radius: 5px; background: var(--crm-page); }
+.kam-pipeline-route-point { min-width: 0; display: grid; gap: 3px; }
+.kam-pipeline-route-point small { color: var(--crm-muted); font-size: 11px; font-weight: 700; letter-spacing: .035em; }
+.kam-pipeline-route-point b { color: var(--crm-ink); font-size: 12px; line-height: 1.4; overflow-wrap: normal; word-break: normal; }
+.kam-pipeline-next b { color: var(--crm-accent-text); }
+.kam-pipeline-arrow { color: var(--crm-muted); font-size: 14px; text-align: center; }
+.kam-pipeline-action { display: grid; gap: 5px; }
+.kam-pipeline-awaiting { color: var(--crm-muted); font-size: 11px; }
+.kam-pipeline-task { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--crm-ink); font-size: 11px; line-height: 1.4; }
+.kam-pipeline-task > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kam-pipeline-task time { flex: 0 0 auto; color: var(--crm-muted); font-size: 11px; }
+.kam-pipeline-task.is-overdue, .kam-pipeline-task.is-overdue time { color: var(--crm-danger, #c73232); }
+.kam-pipeline-empty, .kam-pipeline-empty-lane { color: var(--crm-muted); font-size: 12px; line-height: 1.5; }
+.kam-pipeline-empty { margin: 14px 0 0; }
+.kam-pipeline-empty-lane { margin: 13px 0; }
+.kam-pipeline-error { margin: 10px 0 0; color: var(--crm-danger, #c73232); font-size: 12px; }
+.kam-pipeline-more { margin: 8px 0 0; color: var(--crm-muted); font-size: 11px; line-height: 1.4; }
+.kam-pipeline-queue { display: flex; min-height: 44px; align-items: center; gap: 6px; margin-top: 5px; padding: 5px 0; border: 0; color: var(--crm-accent-text); background: transparent; font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.kam-pipeline-queue:hover { text-decoration: underline; }
+.kam-pipeline-footnote { margin: 12px 0 0; color: var(--crm-muted); font-size: 11px; line-height: 1.5; }
+
+@media (max-width: 740px) {
+  .kam-pipeline-lanes { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 420px) {
+  .kam-pipeline-heading { align-items: center; }
+  .kam-pipeline-heading h2 { font-size: 16px; }
+  .kam-pipeline-lane { padding: 10px; }
+  .kam-pipeline-activity { padding: 8px; }
+  .kam-pipeline-route { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .kam-pipeline-arrow { transform: rotate(90deg); }
+}
