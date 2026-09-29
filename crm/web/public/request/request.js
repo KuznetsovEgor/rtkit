@@ -8,7 +8,8 @@ const organizationInput = form.elements.organization;
 const successCard = document.querySelector('#success-card');
 const errorBox = document.querySelector('#form-error');
 const submitButton = document.querySelector('#submit-button');
-let pendingIdempotencyKey = '';
+let pendingSubmission = null;
+const submissionTimeoutMs = 15_000;
 
 const organizationLabels = { university: 'Название вуза', corporate: 'Название компании' };
 const organizationPlaceholders = {
@@ -42,15 +43,20 @@ tabs.forEach((tab) => tab.addEventListener('click', () => selectKind(tab.dataset
 document.querySelector('#another-request').addEventListener('click', () => {
   successCard.hidden = true;
   form.hidden = false;
-  pendingIdempotencyKey = '';
+  pendingSubmission = null;
   form.reset();
   selectKind('university');
   form.elements.name.focus();
 });
 
-function keyForRetry() {
-  if (!pendingIdempotencyKey) pendingIdempotencyKey = crypto.randomUUID();
-  return pendingIdempotencyKey;
+function keyForRetry(payload) {
+  // A lost response can follow a committed write. Reuse its key only for the
+  // same submitted values; edited values are a different inquiry.
+  const fingerprint = JSON.stringify(payload);
+  if (!pendingSubmission || pendingSubmission.fingerprint !== fingerprint) {
+    pendingSubmission = { fingerprint, key: crypto.randomUUID() };
+  }
+  return pendingSubmission.key;
 }
 
 function validateForm() {
@@ -73,6 +79,7 @@ function validateForm() {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (submitButton.disabled) return;
   errorBox.textContent = '';
   if (!validateForm()) return;
   const data = new FormData(form);
@@ -84,28 +91,30 @@ form.addEventListener('submit', async (event) => {
     organization: String(data.get('organization') ?? '').trim(),
     note: String(data.get('note') ?? '').trim(),
     honeypot: String(data.get('website') ?? ''),
-    idempotencyKey: keyForRetry(),
   };
+  payload.idempotencyKey = keyForRetry(payload);
   submitButton.disabled = true;
   submitButton.setAttribute('aria-busy', 'true');
   const originalLabel = submitButton.innerHTML;
   submitButton.textContent = 'Отправляем…';
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), submissionTimeoutMs);
   try {
     const config = window.RTK_DEMO_CONFIG ?? {};
     const localDevApi = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? `${location.protocol}//${location.hostname}:3001` : 'https://api.crm.futura.team';
     const apiBase = String(config.apiBase ?? localDevApi).replace(/\/$/, '');
     const response = await fetch(`${apiBase}/api/public-demo/inquiries`, {
-      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload), signal: controller.signal,
     });
-    const result = await response.json().catch(() => ({}));
+    const result = await response.json();
     if (!response.ok) {
       if (response.status === 400) errorBox.textContent = result.message || 'Проверьте заполнение полей и попробуйте ещё раз.';
       else if (response.status === 429) errorBox.textContent = 'Слишком много отправок. Попробуйте позже.';
       else errorBox.textContent = 'Не удалось отправить заявку. Попробуйте ещё раз чуть позже.';
-      if (response.status === 400) pendingIdempotencyKey = '';
+      if (response.status === 400) pendingSubmission = null;
       return;
     }
-    pendingIdempotencyKey = '';
+    pendingSubmission = null;
     form.hidden = true;
     successCard.hidden = false;
     document.querySelector('#success-copy').textContent = result.duplicate
@@ -115,6 +124,7 @@ form.addEventListener('submit', async (event) => {
   } catch {
     errorBox.textContent = 'Не удалось связаться с CRM. Данные остались в форме — отправку можно повторить.';
   } finally {
+    window.clearTimeout(timeout);
     submitButton.disabled = false;
     submitButton.removeAttribute('aria-busy');
     submitButton.innerHTML = originalLabel;

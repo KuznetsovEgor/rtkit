@@ -48,7 +48,17 @@ export async function createPublicDemoInquiry(input: PublicDemoInquiry, idempote
       await client.query('INSERT INTO public_demo_intakes(idempotency_key_hash,fingerprint_hash,activity_id) VALUES($1,$2,$3)', [idempotencyHash, fingerprintHash, priorFingerprint.rows[0].activity_id]);
       await client.query('COMMIT'); return { duplicate: true };
     }
-    const owner = await client.query(`SELECT user_sub, display_name FROM kam_directory WHERE enabled=true ORDER BY display_name,user_sub LIMIT 1`);
+    // Keep recipient selection consistent with access changes until the inquiry commits.
+    await client.query("SELECT pg_advisory_xact_lock_shared(hashtext('crm-access-policy'))");
+    // Organization inquiries create a new organization, outside every existing allow-list.
+    const owner = await client.query(`SELECT directory.user_sub, directory.display_name
+      FROM kam_directory directory
+      LEFT JOIN known_crm_users policy ON policy.user_sub=directory.user_sub
+      WHERE directory.enabled=true AND policy.disabled_at IS NULL
+        AND (policy.allowed_kinds IS NULL OR $1=ANY(policy.allowed_kinds))
+        AND ($1='individual' OR policy.allowed_organization_ids IS NULL)
+      ORDER BY directory.display_name,directory.user_sub LIMIT 1
+      FOR SHARE OF directory`, [input.kind]);
     if (!owner.rows[0]) throw new DomainError(503, 'public_intake_unavailable', 'Ответственный КАМ ещё не назначен.');
     const ownerSub = owner.rows[0].user_sub as string;
     const ownerName = owner.rows[0].display_name as string;

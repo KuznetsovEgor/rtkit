@@ -4382,3 +4382,68 @@ test('A43 university reports count independent activities despite shared organiz
   assert.deepEqual(productIds.map((id) => linkedActivities.series.find((series: { filter?: { productId?: string } }) => series.filter?.productId === id)?.value), [2, 1],
     'Product chart values count unique activities with independent stage, state, and history.');
 });
+
+test('public intake assigns only to an available KAM with access to the new activity', { skip: !runIntegration }, async (context) => {
+  const suffix = randomUUID();
+  const preferred: Actor = { sub: `intake-preferred-${suffix}`, name: 'Intake preferred KAM', roles: ['kam'] };
+  const fallback: Actor = { sub: `intake-fallback-${suffix}`, name: 'Intake fallback KAM', roles: ['kam'] };
+  const operator: Actor = { sub: `intake-admin-${suffix}`, name: 'Intake policy administrator', roles: ['admin'] };
+  const policy = new PostgresAccessPolicyService();
+  const subjects = [preferred.sub, fallback.sub, operator.sub];
+  // This file runs tests serially. Restore pre-existing fixture directory flags
+  // afterwards so the no-eligible-owner case does not depend on other fixtures.
+  const existingEnabled = await pool.query<{ user_sub: string }>('UPDATE kam_directory SET enabled=false WHERE enabled=true RETURNING user_sub');
+  context.after(async () => {
+    const created = await pool.query('SELECT id,person_id,organization_id FROM activities WHERE owner_sub=ANY($1::text[])', [subjects]);
+    await pool.query('DELETE FROM activities WHERE owner_sub=ANY($1::text[])', [subjects]);
+    for (const row of created.rows) {
+      if (row.person_id) await pool.query('DELETE FROM people WHERE id=$1', [row.person_id]);
+      if (row.organization_id) await pool.query('DELETE FROM organizations WHERE id=$1', [row.organization_id]);
+    }
+    await pool.query('DELETE FROM crm_activity_scope_audit WHERE target_sub=ANY($1::text[])', [subjects]);
+    await pool.query('DELETE FROM crm_access_policy_audit WHERE target_sub=ANY($1::text[])', [subjects]);
+    await pool.query('DELETE FROM known_crm_users WHERE user_sub=ANY($1::text[])', [subjects]);
+    await pool.query('DELETE FROM kam_directory WHERE user_sub=ANY($1::text[])', [subjects]);
+    await pool.query('UPDATE kam_directory SET enabled=true WHERE user_sub=ANY($1::text[])', [existingEnabled.rows.map(row => row.user_sub)]);
+  });
+  for (const actor of [preferred, fallback, operator]) await policy.observeAndAssertEnabled(actor);
+  await pool.query(`INSERT INTO kam_directory(user_sub,display_name,enabled,provision_source)
+    VALUES($1,'A preferred',true,'public-demo-provisioning'),($2,'B fallback',true,'public-demo-provisioning')`, [preferred.sub, fallback.sub]);
+  const submit = async (kind: 'university' | 'corporate' | 'individual') => {
+    const note = `Policy regression ${randomUUID()}`;
+    await createPublicDemoInquiry({ kind, name: 'Synthetic requester', email: 'policy@example.test', phone: null,
+      organization: kind === 'individual' ? null : `Intake organization ${suffix}`, note }, randomUUID());
+    const result = await pool.query('SELECT owner_sub FROM activities WHERE title LIKE $1', [`%${note}`]);
+    assert.equal(result.rowCount, 1);
+    return result.rows[0].owner_sub;
+  };
+
+  await context.test('disabled CRM user is not selected from the still-enabled directory', async () => {
+    await policy.setEnabled(operator, preferred.sub, false, 'Test revocation');
+    await assert.rejects(policy.observeAndAssertEnabled(preferred), (error: unknown) => error instanceof DomainError && error.code === 'access_revoked');
+    assert.equal(await submit('university'), fallback.sub);
+  });
+  await policy.setEnabled(operator, preferred.sub, true, 'Restore fixture access');
+
+  await context.test('a KAM restricted to another process cannot receive the inquiry', async () => {
+    await policy.setAllowedKinds(operator, preferred.sub, ['individual'], 0, 'Test process scope');
+    assert.equal(await submit('corporate'), fallback.sub);
+  });
+  await policy.setAllowedKinds(operator, preferred.sub, null, 1, 'Restore fixture scope');
+
+  await context.test('new organizations require an unrestricted organization scope', async () => {
+    await policy.setAllowedOrganizations(operator, preferred.sub, [], 2, 'Test organization scope');
+    assert.equal(await submit('university'), fallback.sub);
+  });
+  await context.test('an individual without organization remains assignable with an empty organization scope', async () => {
+    assert.equal(await submit('individual'), preferred.sub);
+  });
+
+  await context.test('no eligible recipient rejects atomically instead of hiding a new inquiry', async () => {
+    await policy.setEnabled(operator, fallback.sub, false, 'Test unavailable fallback');
+    const before = await pool.query('SELECT (SELECT count(*) FROM people) AS people, (SELECT count(*) FROM organizations) AS organizations, (SELECT count(*) FROM activities) AS activities');
+    await assert.rejects(submit('corporate'), (error: unknown) => error instanceof DomainError && error.statusCode === 503 && error.code === 'public_intake_unavailable');
+    const after = await pool.query('SELECT (SELECT count(*) FROM people) AS people, (SELECT count(*) FROM organizations) AS organizations, (SELECT count(*) FROM activities) AS activities');
+    assert.deepEqual(after.rows, before.rows);
+  });
+});
