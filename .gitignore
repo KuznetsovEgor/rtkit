@@ -1,28 +1,24 @@
-# Локальные секреты и служебные файлы.
+# Локальные файлы.
 .env
 .env.*
 !.env.example
 .DS_Store
 node_modules/
 dist/
-
-
-# Локально полученные ресурсы Atomaro: права на публикацию пакета и шрифтов не подтверждены.
+# Сторонние ресурсы.
 /artifacts/atomaro-gen2-access/
 /artifacts/atomaro-gen2-access.zip
 
-# Единый локальный backlog GOAL.
-/.agent/
-**/.agent/
+# Рабочие каталоги и черновики.
+**/.*/
+/*_*.md
 
-# Runtime data and local source material are not part of the public handoff.
 /crm/.local-storage/
 /crm/api/.mock-state/
 /crm/delivery/
 /artifacts/
-/ai-docs/
+/*-docs/
 /design/
-/RTK_CRM_GOAL.md
 /RTK-IT-deep-research.md
 /*.txt
 /*.md.bak
